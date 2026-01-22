@@ -1,18 +1,38 @@
 
-with App_Global;
+with App_Global;              use App_Global;
 with Config_File;
+with Simple_Logging;
 
 with GNAT.Command_Line;       use GNAT.Command_Line;
 
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Exceptions;          use Ada.Exceptions;
-with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
+with Ada.Characters.Handling;
 with Mac_Address_Parser;
 
 procedure Buffalo_Nas_Ctl is
 
    Config_File_Name : Unbounded_String := To_Unbounded_String ("");
+
+   procedure Set_Log_Level (S : String) is
+      Upper_S : constant String := Ada.Characters.Handling.To_Upper (S);
+   begin
+      if    Upper_S = "DEBUG" then
+         Simple_Logging.Level := Simple_Logging.Debug;
+      elsif Upper_S = "INFO"  then
+         Simple_Logging.Level := Simple_Logging.Info;
+      elsif Upper_S = "WARN"  then
+         Simple_Logging.Level := Simple_Logging.Warning;
+      elsif Upper_S = "ERROR" then
+         Simple_Logging.Level := Simple_Logging.Error;
+      elsif Upper_S = "FATAL" then
+         Simple_Logging.Level := Simple_Logging.Always;
+      else
+         raise Constraint_Error with "Ungültiger Log-Level: '" & S & "'";
+      end if;
+      Log.Info ("Log-Level changed to " & Upper_S);
+   end Set_Log_Level;
 
    procedure Parse_Command_Line is
 
@@ -53,6 +73,11 @@ procedure Buffalo_Nas_Ctl is
                      Long_Switch => "--conf=",
                      Argument    => "FILE",
                      Help        => "Configuration file");
+      Define_Switch (Config      => Config,
+                     Switch      => "-v=",
+                     Long_Switch => "--verbose=",
+                     Argument    => "DEBUG|INFO|WARN|ERROR|FATAL",
+                     Help        => "Verbosity");
       Define_Switch (Config      => Config,
                      Switch      => "-a=",
                      Long_Switch => "--addr=",
@@ -97,10 +122,11 @@ procedure Buffalo_Nas_Ctl is
                      Argument    => "NUM",
                      Help        => "Service port number (default 8080)");
       Getopt (Config => Config);
-      Parse_String_Switch ("-c=", "--conf=",   Config_File_Name);
-      Parse_String_Switch ("-a=", "--addr=",   App_Global.WoL_Target);
-      Parse_String_Switch ("-m=", "--mac=",    App_Global.WoL_Mac);
-      Parse_String_Switch ("-l=", "--listen=", App_Global.Svc_Interface);
+      Parse_String_Switch ("-c=", "--conf=",    Config_File_Name);
+      Parse_String_Switch ("-v=", "--verbose=", App_Global.App_Log_Level);
+      Parse_String_Switch ("-a=", "--addr=",    App_Global.WoL_Target);
+      Parse_String_Switch ("-m=", "--mac=",     App_Global.WoL_Mac);
+      Parse_String_Switch ("-l=", "--listen=",  App_Global.Svc_Interface);
    end Parse_Command_Line;
 
 begin
@@ -110,6 +136,12 @@ begin
          Config : Config_File.Configuration;
       begin
          Config_File.Load (Config, To_String (Config_File_Name));
+         if Length (App_Global.App_Log_Level) = 0 then
+            App_Global.App_Log_Level :=
+              To_Unbounded_String (
+              Config_File.Get (Config, "App", "Verbosity",
+                               App_Global.App_Log_Level_Default));
+         end if;
          if Length (App_Global.WoL_Target) = 0 then
             App_Global.WoL_Target :=
               To_Unbounded_String (
@@ -150,6 +182,10 @@ begin
          end if;
       end;
    else --  Apply defaults, if not specified:
+      if Length (App_Global.App_Log_Level) = 0 then
+         App_Global.App_Log_Level :=
+           To_Unbounded_String (App_Global.App_Log_Level_Default);
+      end if;
       if Length (App_Global.WoL_Target) = 0 then
          App_Global.WoL_Target :=
            To_Unbounded_String (App_Global.WoL_Target_Default);
@@ -175,6 +211,11 @@ begin
          App_Global.Svc_Port := App_Global.Svc_Port_Default;
       end if;
    end if;
+   --  Set Log Level:
+   Set_Log_Level (To_String (App_Global.App_Log_Level));
+   Log.Info ("This is "  & App_Global.App_Name &
+             " version " & App_Global.App_Version &
+             " - Copyright (C) Reiner Hagn, 2026");
    --  Parse MAC to internal format:
    App_Global.NAS_Mac :=
      Mac_Address_Parser.To_Mac_Address (To_String (App_Global.WoL_Mac));
@@ -185,12 +226,12 @@ exception
    when Exit_From_Command_Line =>
       Set_Exit_Status (Failure);  -- Help was displayed, exit with failure
    when Invalid_Switch =>
-      Put_Line (Standard_Error, "Error: Invalid option");
+      Log.Error ("Error: Invalid option");
       Try_Help;
    when Invalid_Parameter =>
-      Put_Line (Standard_Error, "Error: Invalid parameter value");
+      Log.Error ("Error: Invalid parameter value");
       Try_Help;
    when E : others =>
-      Put_Line (Standard_Error, "Error: " & Exception_Message (E));
+      Log.Error ("Error: " & Exception_Message (E));
       Set_Exit_Status (Failure);
 end Buffalo_Nas_Ctl;

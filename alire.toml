@@ -16,3 +16,6 @@ aws = "^25.2.0"
 
 [[depends-on]]
 utilada = "^2.8.2"
+
+[[depends-on]]
+simple_logging = "^1.2.0"

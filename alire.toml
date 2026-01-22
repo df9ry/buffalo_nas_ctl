@@ -1,0 +1,18 @@
+name = "buffalo_nas_ctl"
+description = "Control the power state of the buffalo nas"
+version = "0.1.0-dev"
+
+authors = ["Reiner Hagn"]
+maintainers = ["Reiner Hagn <reiner@jemira.net>"]
+maintainers-logins = ["df9y"]
+licenses = "GPL-3.0-or-later"
+website = ""
+tags = ["buffalo", "nas", "power"]
+
+executables = ["buffalo_nas_ctl"]
+
+[[depends-on]]
+aws = "^25.2.0"
+
+[[depends-on]]
+utilada = "^2.8.2"

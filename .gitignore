@@ -1,0 +1,13 @@
+# Object file
+*.o
+
+# Ada Library Information
+*.ali
+
+# Backups
+*.prev
+
+# Ignored directories
+/obj/
+/bin/
+/alire/

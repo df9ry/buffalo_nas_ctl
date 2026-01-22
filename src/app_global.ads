@@ -1,7 +1,7 @@
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
-with Mac_Address_Parser;
+with Interfaces;
 
 package App_Global is
 
@@ -21,6 +21,7 @@ package App_Global is
    Svc_Interface : Unbounded_String := To_Unbounded_String ("");
    Svc_Port      : aliased Integer  := -1;
 
-   NAS_Mac : Mac_Address_Parser.Mac_Address := (others => 0);
+   type Mac_Address is array (1 .. 6) of Interfaces.Unsigned_8;
+   NAS_Mac : Mac_Address := (others => 0);
 
 end App_Global;

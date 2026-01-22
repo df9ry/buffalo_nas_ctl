@@ -1,5 +1,6 @@
 with Ada.Strings.Fixed;
-with Ada.Strings.Maps.Constants;
+
+with Interfaces; use Interfaces;
 
 package body Mac_Address_Parser is
 
@@ -7,16 +8,15 @@ package body Mac_Address_Parser is
    -- To_Mac_Address --
    --------------------
 
-   function To_Mac_Address (S : String) return Mac_Address is
+   function To_Mac_Address (S : String) return App_Global.Mac_Address is
       use Ada.Strings.Fixed;
-      use Interfaces;
 
-      Result     : Mac_Address := (others => 0);
+      Result     : App_Global.Mac_Address := (others => 0);
       Clean      : String (1 .. 12);
       Pos        : Natural := Clean'First;
       Input      : constant String := Trim (S, Ada.Strings.Both);
    begin
-      -- Nur Hex-Zeichen sammeln, : - und Leerzeichen ignorieren
+      --  Nur Hex-Zeichen sammeln, : - und Leerzeichen ignorieren
       for C of Input loop
          if Ada.Strings.Maps.Is_In (C, Hex_Digits) then
             Clean (Pos) := C;
@@ -27,13 +27,15 @@ package body Mac_Address_Parser is
       end loop;
 
       if Pos - 1 /= 12 then
-         raise Constraint_Error with "MAC-Adresse hat nicht genau 12 Hex-Ziffern";
+         raise Constraint_Error with
+           "MAC-Adresse hat nicht genau 12 Hex-Ziffern";
       end if;
 
-      -- Je zwei Zeichen zu einem Byte machen
+      --  Je zwei Zeichen zu einem Byte machen
       for I in 1 .. 6 loop
          declare
-            Hex_Pair : constant String := Clean ((I-1)*2 + 1 .. (I-1)*2 + 2);
+            Hex_Pair : constant String :=
+              Clean ((I - 1) * 2 + 1 .. (I - 1) * 2 + 2);
          begin
             Result (I) := Unsigned_8'Value ("16#" & Hex_Pair & "#");
          exception

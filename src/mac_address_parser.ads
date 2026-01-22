@@ -1,11 +1,9 @@
 with Ada.Strings.Maps;
-with Interfaces;
+with App_Global;
 
 package Mac_Address_Parser is
 
-   type Mac_Address is array (1 .. 6) of Interfaces.Unsigned_8;
-
-   function To_Mac_Address (S : String) return Mac_Address
+   function To_Mac_Address (S : String) return App_Global.Mac_Address
      with
        Pre  => S'Length = 17 or else S'Length = 12;
 

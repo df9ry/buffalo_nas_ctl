@@ -22,7 +22,6 @@ package body Web_Server is
       procedure Handler;
       pragma Interrupt_Handler (Handler);
       pragma Attach_Handler (Handler, Ada.Interrupts.Names.SIGTERM);
-      --  pragma Attach_Handler (Handler, Ada.Interrupts.Names.SIGINT);
       pragma Attach_Handler (Handler, Ada.Interrupts.Names.SIGQUIT);
 
       Shutdown_Flag : Boolean := False;

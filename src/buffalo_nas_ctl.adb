@@ -10,6 +10,7 @@ with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
 with Ada.Characters.Handling;
 with Mac_Address_Parser;
+with Web_Server;
 
 procedure Buffalo_Nas_Ctl is
 
@@ -219,6 +220,8 @@ begin
    --  Parse MAC to internal format:
    App_Global.NAS_Mac :=
      Mac_Address_Parser.To_Mac_Address (To_String (App_Global.WoL_Mac));
+
+   Web_Server.Run;
 
    Set_Exit_Status (Success);
 

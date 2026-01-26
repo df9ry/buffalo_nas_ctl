@@ -3,6 +3,7 @@ with Ada.Strings;
 with Ada.Strings.Fixed;
 with Ada.Strings.Maps;
 with Ada.Strings.Maps.Constants;
+with App_Global; use App_Global;
 
 package body Config_File is
 
@@ -98,9 +99,13 @@ package body Config_File is
                  Section, Key : String) return String is
       Full_Key : constant String := Make_Key (Section, Key);
    begin
+      Log.Debug ("Get Full_Key is """ & Full_Key & """");
       if Config.Data.Contains (Full_Key) then
+         Log.Debug ("Get: Found: Return """ &
+                      Config.Data.Element (Full_Key) & """");
          return Config.Data.Element (Full_Key);
       else
+         Log.Debug ("Get: not found");
          return "";
       end if;
    end Get;
@@ -122,13 +127,19 @@ package body Config_File is
                      Default : Integer := 0) return Integer is
       Value : constant String := Get (Config, Section, Key);
    begin
+      Log.Debug ("Get_Int: lookup " & Section & " - " & Key);
       if Value'Length = 0 then
+         Log.Debug ("Get_Int: return default:" & Default'Image);
          return Default;
+      else
+         Log.Debug ("Get_Int: return value:" & Value & " - " &
+                      Integer'Value (Value)'Image);
+         return Integer'Value (Value);
       end if;
-
-      return Integer'Value (Value);
    exception
       when Constraint_Error =>
+         log.Warning ("Invalid Integer value: " & Section & "." & Key &
+                        "=""" & Value & """");
          return Default;
    end Get_Int;
 

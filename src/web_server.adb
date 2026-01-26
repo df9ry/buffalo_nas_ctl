@@ -223,8 +223,9 @@ package body Web_Server is
 
       Log.Info ("Start server listen on " & To_String (Svc_Interface) &
                   " Port " & Integer'Image (Svc_Port));
-      AWS.Server.Start
-        (Server, Name => "NAS Server", Callback => Request_Handler'Access);
+      AWS.Server.Start (Server,
+         Name     => App_Name,
+         Callback => Request_Handler'Access);
 
       while not Receiver.Should_Shutdown loop
          delay 0.5;

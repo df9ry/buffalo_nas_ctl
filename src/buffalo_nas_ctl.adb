@@ -85,7 +85,7 @@ procedure Buffalo_Nas_Ctl is
                      Argument    => "IP-ADDR",
                      Help        => "NAS IP broadcast address");
       Define_Switch (Config      => Config,
-                     Output      => App_Global.WoL_Port'Access,
+                     Output      => WoL_Port'Access,
                      Default     => -1,
                      Switch      => "-p=",
                      Long_Switch => "--port=",
@@ -97,14 +97,14 @@ procedure Buffalo_Nas_Ctl is
                      Argument    => "MAC",
                      Help        => "NAS MAC address");
       Define_Switch (Config      => Config,
-                     Output      => App_Global.WoL_Interval'Access,
+                     Output      => WoL_Interval'Access,
                      Default     => -1,
                      Switch      => "-i=",
                      Long_Switch => "--interval=",
                      Argument    => "NUM",
                      Help        => "WoL interval (default 30)");
       Define_Switch (Config      => Config,
-                     Output      => App_Global.NAS_Shutdown'Access,
+                     Output      => NAS_Shutdown'Access,
                      Default     => -1,
                      Switch      => "-s=",
                      Long_Switch => "--shutdown=",
@@ -116,110 +116,109 @@ procedure Buffalo_Nas_Ctl is
                      Argument    => "IP-ADDR",
                      Help        => "Service listen interface");
       Define_Switch (Config      => Config,
-                     Output      => App_Global.Svc_Port'Access,
-                     Default     => -1,
+                     Output      => Svc_Port'Access,
+                     Initial     => -1,
                      Switch      => "-w=",
                      Long_Switch => "--web=",
                      Argument    => "NUM",
                      Help        => "Service port number (default 8080)");
       Getopt (Config => Config);
       Parse_String_Switch ("-c=", "--conf=",    Config_File_Name);
-      Parse_String_Switch ("-v=", "--verbose=", App_Global.App_Log_Level);
-      Parse_String_Switch ("-a=", "--addr=",    App_Global.WoL_Target);
-      Parse_String_Switch ("-m=", "--mac=",     App_Global.WoL_Mac);
-      Parse_String_Switch ("-l=", "--listen=",  App_Global.Svc_Interface);
+      Parse_String_Switch ("-v=", "--verbose=", App_Log_Level);
+      Parse_String_Switch ("-a=", "--addr=",    WoL_Target);
+      Parse_String_Switch ("-m=", "--mac=",     WoL_Mac);
+      Parse_String_Switch ("-l=", "--listen=",  Svc_Interface);
    end Parse_Command_Line;
 
 begin
+   Simple_Logging.Level := Simple_Logging.Debug;
+   Log.Debug ("Debug is on");
    Parse_Command_Line;
    if Length (Config_File_Name) > 0 then
       declare
          Config : Config_File.Configuration;
       begin
+         Log.Info ("Using config file " & To_String (Config_File_Name));
          Config_File.Load (Config, To_String (Config_File_Name));
-         if Length (App_Global.App_Log_Level) = 0 then
-            App_Global.App_Log_Level :=
+         if Length (App_Log_Level) = 0 then
+            App_Log_Level :=
               To_Unbounded_String (
               Config_File.Get (Config, "App", "Verbosity",
-                               App_Global.App_Log_Level_Default));
+                               App_Log_Level_Default));
          end if;
-         if Length (App_Global.WoL_Target) = 0 then
-            App_Global.WoL_Target :=
+         if Length (WoL_Target) = 0 then
+            WoL_Target :=
               To_Unbounded_String (
               Config_File.Get (Config, "WoL", "Target",
-                               App_Global.WoL_Target_Default));
+                               WoL_Target_Default));
          end if;
-         if App_Global.WoL_Port = -1 then
-            App_Global.WoL_Port :=
+         if WoL_Port = -1 then
+            WoL_Port :=
               Config_File.Get_Int (Config, "WoL", "Port",
-                                   App_Global.WoL_Port_Default);
+                                   WoL_Port_Default);
          end if;
-         if Length (App_Global.WoL_Mac) = 0 then
-            App_Global.WoL_Mac :=
+         if Length (WoL_Mac) = 0 then
+            WoL_Mac :=
               To_Unbounded_String (
               Config_File.Get (Config, "WoL", "Mac",
-                               App_Global.WoL_Mac_Default));
+                               WoL_Mac_Default));
          end if;
-         if App_Global.WoL_Interval = -1 then
-            App_Global.WoL_Interval :=
+         if WoL_Interval = -1 then
+            WoL_Interval :=
               Config_File.Get_Int (Config, "WoL", "Interval",
-                                   App_Global.WoL_Interval_Default);
+                                   WoL_Interval_Default);
          end if;
-         if App_Global.NAS_Shutdown = -1 then
-            App_Global.NAS_Shutdown :=
+         if NAS_Shutdown = -1 then
+            NAS_Shutdown :=
               Config_File.Get_Int (Config, "NAS", "Shutdown",
-                                   App_Global.NAS_Shutdown_Default);
+                                   NAS_Shutdown_Default);
          end if;
-         if Length (App_Global.Svc_Interface) = 0 then
+         if Length (Svc_Interface) = 0 then
             App_Global.Svc_Interface :=
               To_Unbounded_String (
               Config_File.Get (Config, "Service", "Interface",
-                               App_Global.Svc_Interface_Default));
+                               Svc_Interface_Default));
          end if;
-         if App_Global.Svc_Port = -1 then
-            App_Global.Svc_Port :=
+         if Svc_Port = -1 then
+            Svc_Port :=
               Config_File.Get_Int (Config, "Service", "Port",
-                                   App_Global.Svc_Port_Default);
+                                   Svc_Port_Default);
          end if;
       end;
-   else --  Apply defaults, if not specified:
-      if Length (App_Global.App_Log_Level) = 0 then
-         App_Global.App_Log_Level :=
-           To_Unbounded_String (App_Global.App_Log_Level_Default);
+   else
+      Log.Debug ("No config file");
+      if Length (App_Log_Level) = 0 then
+         App_Log_Level := To_Unbounded_String (App_Log_Level_Default);
       end if;
-      if Length (App_Global.WoL_Target) = 0 then
-         App_Global.WoL_Target :=
-           To_Unbounded_String (App_Global.WoL_Target_Default);
+      if Length (WoL_Target) = 0 then
+         WoL_Target := To_Unbounded_String (WoL_Target_Default);
       end if;
-      if App_Global.WoL_Port = -1 then
-         App_Global.WoL_Port := App_Global.WoL_Port_Default;
+      if WoL_Port = -1 then
+         WoL_Port := WoL_Port_Default;
       end if;
-      if Length (App_Global.WoL_Mac) = 0 then
-         App_Global.WoL_Mac :=
-           To_Unbounded_String (App_Global.WoL_Mac_Default);
+      if Length (WoL_Mac) = 0 then
+         WoL_Mac := To_Unbounded_String (WoL_Mac_Default);
       end if;
-      if App_Global.WoL_Interval = -1 then
-         App_Global.WoL_Interval := App_Global.WoL_Interval_Default;
+      if WoL_Interval = -1 then
+         WoL_Interval := WoL_Interval_Default;
       end if;
-      if App_Global.NAS_Shutdown = -1 then
-         App_Global.NAS_Shutdown := App_Global.NAS_Shutdown_Default;
+      if NAS_Shutdown = -1 then
+         NAS_Shutdown := NAS_Shutdown_Default;
       end if;
-      if Length (App_Global.Svc_Interface) = 0 then
-         App_Global.Svc_Interface :=
-           To_Unbounded_String (App_Global.Svc_Interface_Default);
+      if Length (Svc_Interface) = 0 then
+         Svc_Interface := To_Unbounded_String (Svc_Interface_Default);
       end if;
-      if App_Global.Svc_Port = -1 then
-         App_Global.Svc_Port := App_Global.Svc_Port_Default;
+      if Svc_Port = -1 then
+         Svc_Port := Svc_Port_Default;
       end if;
    end if;
    --  Set Log Level:
-   Set_Log_Level (To_String (App_Global.App_Log_Level));
-   Log.Info ("This is "  & App_Global.App_Name &
-             " version " & App_Global.App_Version &
+   Set_Log_Level (To_String (App_Log_Level));
+   Log.Info ("This is "  & App_Name &
+             " version " & App_Version &
              " - Copyright (C) Reiner Hagn, 2026");
    --  Parse MAC to internal format:
-   App_Global.NAS_Mac :=
-     Mac_Address_Parser.To_Mac_Address (To_String (App_Global.WoL_Mac));
+   NAS_Mac := Mac_Address_Parser.To_Mac_Address (To_String (WoL_Mac));
 
    Web_Server.Run;
 

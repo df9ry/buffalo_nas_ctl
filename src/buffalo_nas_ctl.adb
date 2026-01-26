@@ -86,7 +86,7 @@ procedure Buffalo_Nas_Ctl is
                      Help        => "NAS IP broadcast address");
       Define_Switch (Config      => Config,
                      Output      => WoL_Port'Access,
-                     Default     => -1,
+                     Initial     => -1,
                      Switch      => "-p=",
                      Long_Switch => "--port=",
                      Argument    => "NUM",
@@ -98,14 +98,14 @@ procedure Buffalo_Nas_Ctl is
                      Help        => "NAS MAC address");
       Define_Switch (Config      => Config,
                      Output      => WoL_Interval'Access,
-                     Default     => -1,
+                     Initial     => -1,
                      Switch      => "-i=",
                      Long_Switch => "--interval=",
                      Argument    => "NUM",
                      Help        => "WoL interval (default 30)");
       Define_Switch (Config      => Config,
                      Output      => NAS_Shutdown'Access,
-                     Default     => -1,
+                     Initial     => -1,
                      Switch      => "-s=",
                      Long_Switch => "--shutdown=",
                      Argument    => "NUM",

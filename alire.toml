@@ -15,8 +15,4 @@ executables = ["buffalo_nas_ctl"]
 utilada = "^2.8.2"
 
 [[depends-on]]
-simple_logging = "^1.2.0"
-
-[[depends-on]]
 aws = "^25.2.0"
-

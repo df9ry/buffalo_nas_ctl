@@ -3,7 +3,7 @@ with Ada.Strings;
 with Ada.Strings.Fixed;
 with Ada.Strings.Maps;
 with Ada.Strings.Maps.Constants;
-with App_Global; use App_Global;
+with Log;
 
 package body Config_File is
 

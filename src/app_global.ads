@@ -1,7 +1,6 @@
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Interfaces;
-with Simple_Logging;
 
 package App_Global is
 
@@ -28,7 +27,5 @@ package App_Global is
 
    type Mac_Address is array (1 .. 6) of Interfaces.Unsigned_8;
    NAS_Mac : Mac_Address := [others => 0];
-
-   package Log renames Simple_Logging;
 
 end App_Global;

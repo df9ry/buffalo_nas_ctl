@@ -11,7 +11,7 @@ package body Mac_Address_Parser is
    function To_Mac_Address (S : String) return App_Global.Mac_Address is
       use Ada.Strings.Fixed;
 
-      Result     : App_Global.Mac_Address := (others => 0);
+      Result     : App_Global.Mac_Address := [others => 0];
       Clean      : String (1 .. 12);
       Pos        : Natural := Clean'First;
       Input      : constant String := Trim (S, Ada.Strings.Both);

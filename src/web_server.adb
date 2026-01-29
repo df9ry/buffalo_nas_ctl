@@ -14,6 +14,8 @@ with AWS.MIME;
 with AWS.Config;
 with AWS.Messages;
 
+with Log;
+
 package body Web_Server is
 
    protected type Signal_Receiver is

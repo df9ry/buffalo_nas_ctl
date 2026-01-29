@@ -1,39 +1,20 @@
 
 with App_Global;              use App_Global;
 with Config_File;
-with Simple_Logging;
 
 with GNAT.Command_Line;       use GNAT.Command_Line;
 
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
-with Ada.Characters.Handling;
 with Mac_Address_Parser;
 with Web_Server;
+with WoL_Task;
+with Log;
 
 procedure Buffalo_Nas_Ctl is
 
    Config_File_Name : Unbounded_String := To_Unbounded_String ("");
-
-   procedure Set_Log_Level (S : String) is
-      Upper_S : constant String := Ada.Characters.Handling.To_Upper (S);
-   begin
-      if    Upper_S = "DEBUG" then
-         Simple_Logging.Level := Simple_Logging.Debug;
-      elsif Upper_S = "INFO"  then
-         Simple_Logging.Level := Simple_Logging.Info;
-      elsif Upper_S = "WARN"  then
-         Simple_Logging.Level := Simple_Logging.Warning;
-      elsif Upper_S = "ERROR" then
-         Simple_Logging.Level := Simple_Logging.Error;
-      elsif Upper_S = "FATAL" then
-         Simple_Logging.Level := Simple_Logging.Always;
-      else
-         raise Constraint_Error with "Ungültiger Log-Level: '" & S & "'";
-      end if;
-      Log.Info ("Log-Level changed to " & Upper_S);
-   end Set_Log_Level;
 
    procedure Parse_Command_Line is
 
@@ -131,7 +112,7 @@ procedure Buffalo_Nas_Ctl is
    end Parse_Command_Line;
 
 begin
-   Simple_Logging.Level := Simple_Logging.Debug;
+   Log.Set_Level (Log.Debug);
    Log.Debug ("Debug is on");
    Parse_Command_Line;
    if Length (Config_File_Name) > 0 then
@@ -213,14 +194,16 @@ begin
       end if;
    end if;
    --  Set Log Level:
-   Set_Log_Level (To_String (App_Log_Level));
+   Log.Set_Level (To_String (App_Log_Level));
    Log.Info ("This is "  & App_Name &
              " version " & App_Version &
              " - Copyright (C) Reiner Hagn, 2026");
    --  Parse MAC to internal format:
    NAS_Mac := Mac_Address_Parser.To_Mac_Address (To_String (WoL_Mac));
 
+   WoL_Task.Worker.Start;
    Web_Server.Run;
+   WoL_Task.Worker.Shutdown;
 
    Set_Exit_Status (Success);
 

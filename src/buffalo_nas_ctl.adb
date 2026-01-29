@@ -194,16 +194,17 @@ begin
       end if;
    end if;
    --  Set Log Level:
-   Log.Set_Level (To_String (App_Log_Level));
+   --  Log.Set_Level (To_String (App_Log_Level));
+   Log.Set_Level (Log.Debug);
    Log.Info ("This is "  & App_Name &
              " version " & App_Version &
              " - Copyright (C) Reiner Hagn, 2026");
    --  Parse MAC to internal format:
    NAS_Mac := Mac_Address_Parser.To_Mac_Address (To_String (WoL_Mac));
 
-   WoL_Task.Worker.Start;
+   WoL_Task.Start;
    Web_Server.Run;
-   WoL_Task.Worker.Shutdown;
+   WoL_Task.Shutdown;
 
    Set_Exit_Status (Success);
 

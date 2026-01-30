@@ -1,6 +1,6 @@
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Interfaces;
+with Ada.Streams;           use Ada.Streams;
 
 package App_Global is
 
@@ -25,7 +25,8 @@ package App_Global is
    Svc_Interface : Unbounded_String := To_Unbounded_String ("");
    Svc_Port      : aliased Integer  := -1;
 
-   type Mac_Address is array (1 .. 6) of Interfaces.Unsigned_8;
+   subtype MAC_Byte is Stream_Element range 0 .. 255;
+   type MAC_Address is array (1 .. 6) of MAC_Byte;
    NAS_Mac : Mac_Address := [others => 0];
 
 end App_Global;

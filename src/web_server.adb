@@ -18,31 +18,35 @@ with Log;
 
 package body Web_Server is
 
-   protected type Signal_Receiver is
-      function Should_Shutdown return Boolean;
+   protected Shutdown_Control is
+      entry Wait_Until_Shutdown;
+      procedure Signal_Shutdown;
+
+      procedure On_Term_Signal;
+      pragma Attach_Handler (On_Term_Signal, Ada.Interrupts.Names.SIGTERM);
+      pragma Attach_Handler (On_Term_Signal, Ada.Interrupts.Names.SIGQUIT);
+      pragma Attach_Handler (On_Term_Signal, Ada.Interrupts.Names.SIGHUP);
+
    private
-      procedure Handler;
-      pragma Interrupt_Handler (Handler);
-      pragma Attach_Handler (Handler, Ada.Interrupts.Names.SIGTERM);
-      pragma Attach_Handler (Handler, Ada.Interrupts.Names.SIGQUIT);
+      Done : Boolean := False;
+   end Shutdown_Control;
 
-      Shutdown_Flag : Boolean := False;
-   end Signal_Receiver;
-
-   protected body Signal_Receiver is
-      function Should_Shutdown return Boolean is
+   protected body Shutdown_Control is
+      entry Wait_Until_Shutdown when Done is
       begin
-         return Shutdown_Flag;
-      end Should_Shutdown;
+         null;
+      end Wait_Until_Shutdown;
 
-      procedure Handler is
+      procedure Signal_Shutdown is
       begin
-         Shutdown_Flag := True;
-      end Handler;
-   end Signal_Receiver;
+         Done := True;
+      end Signal_Shutdown;
 
-   --  Globales Instance
-   Receiver : Signal_Receiver;
+      procedure On_Term_Signal is
+      begin
+         Done := True;
+      end On_Term_Signal;
+   end Shutdown_Control;
 
    package Timestamp_Maps is new
      Ada.Containers.Indefinite_Hashed_Maps
@@ -223,15 +227,16 @@ package body Web_Server is
       AWS.Config.Set.Max_Connection (Config, 10);
       AWS.Config.Set.Accept_Queue_Size (Config, 5);
 
-      Log.Info ("Start server listen on " & To_String (Svc_Interface) &
-                  " Port " & Integer'Image (Svc_Port));
-      AWS.Server.Start (Server,
-         Name     => App_Name,
-         Callback => Request_Handler'Access);
+      Log.Info
+        ("Start server listen on "
+         & To_String (Svc_Interface)
+         & " Port "
+         & Integer'Image (Svc_Port));
 
-      while not Receiver.Should_Shutdown loop
-         delay 0.5;
-      end loop;
+      AWS.Server.Start
+        (Server, Name => App_Name, Callback => Request_Handler'Access);
+
+      Shutdown_Control.Wait_Until_Shutdown;
 
       --  Server stoppen
       AWS.Server.Shutdown (Server);

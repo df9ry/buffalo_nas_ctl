@@ -1,7 +1,5 @@
 with Ada.Strings.Fixed;
 
-with Interfaces; use Interfaces;
-
 package body Mac_Address_Parser is
 
    --------------------
@@ -37,7 +35,8 @@ package body Mac_Address_Parser is
             Hex_Pair : constant String :=
               Clean ((I - 1) * 2 + 1 .. (I - 1) * 2 + 2);
          begin
-            Result (I) := Unsigned_8'Value ("16#" & Hex_Pair & "#");
+            Result (I) := App_Global.MAC_Byte
+              (Integer'Value ("16#" & Hex_Pair & "#"));
          exception
             when Constraint_Error =>
                raise Constraint_Error with "Ungültiges Hex-Paar: " & Hex_Pair;

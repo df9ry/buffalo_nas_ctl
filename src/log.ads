@@ -28,7 +28,7 @@ package Log is
    procedure Trace   (Template : String; Arg : Boolean);
 
    procedure Debug   (Template : String; Arg : String);
-   procedure Debug   (Template : String; 
+   procedure Debug   (Template : String;
                       Arg : Ada.Strings.Unbounded.Unbounded_String);
    procedure Debug   (Template : String; Arg : Integer);
    procedure Debug   (Template : String; Arg : Float);
@@ -64,6 +64,15 @@ package Log is
 
    --  Formatierte Logs mit bis zu 4 Argumenten (alle als Unbounded_String)
    procedure Debug (Template : String;
+                    Arg1 : Ada.Strings.Unbounded.Unbounded_String;
+                    Arg2 : Ada.Strings.Unbounded.Unbounded_String :=
+                      Ada.Strings.Unbounded.Null_Unbounded_String;
+                    Arg3 : Ada.Strings.Unbounded.Unbounded_String :=
+                      Ada.Strings.Unbounded.Null_Unbounded_String;
+                    Arg4 : Ada.Strings.Unbounded.Unbounded_String :=
+                      Ada.Strings.Unbounded.Null_Unbounded_String);
+
+   procedure Info  (Template : String;
                     Arg1 : Ada.Strings.Unbounded.Unbounded_String;
                     Arg2 : Ada.Strings.Unbounded.Unbounded_String :=
                       Ada.Strings.Unbounded.Null_Unbounded_String;

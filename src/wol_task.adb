@@ -1,14 +1,10 @@
 with Ada.Real_Time;
 with Log;
 with App_Global;
+with Wake_On_Lan;
 
 package body WoL_Task is
    use Ada.Real_Time;
-
-   procedure Execute_WoL is
-   begin
-      Log.Info ("Send WoL");
-   end Execute_WoL;
 
    protected body Status_Monitor is
       function Get_Status return NAS_Status is
@@ -79,7 +75,7 @@ package body WoL_Task is
                select
                   delay until Next_WoL_Time;
                   Log_Debug ("Delay finished, sending WoL");
-                  Execute_WoL;
+                  Wake_On_Lan.Send;
                   Next_WoL_Time := Clock + WoL_Interval;
                   Log_Debug
                     ("Next_WoL_Time set to: "

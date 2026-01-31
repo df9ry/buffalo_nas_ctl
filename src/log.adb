@@ -405,4 +405,26 @@ package body Log is
       Protected_Log.Log (Debug, Replace (Template, V));
    end Debug;
 
+   procedure Info
+     (Template : String;
+      Arg1     : Unbounded_String;
+      Arg2     : Unbounded_String := Null_Unbounded_String;
+      Arg3     : Unbounded_String := Null_Unbounded_String;
+      Arg4     : Unbounded_String := Null_Unbounded_String)
+   is
+      V : Vector;
+   begin
+      V.Append (Arg1);
+      if Arg2 /= Null_Unbounded_String then
+         V.Append (Arg2);
+      end if;
+      if Arg3 /= Null_Unbounded_String then
+         V.Append (Arg3);
+      end if;
+      if Arg4 /= Null_Unbounded_String then
+         V.Append (Arg4);
+      end if;
+      Protected_Log.Log (Info, Replace (Template, V));
+   end Info;
+
 end Log;

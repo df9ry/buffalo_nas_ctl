@@ -5,6 +5,7 @@ with "utilada_base.gpr";
 with "utilada_conf.gpr";
 with "utilada_core.gpr";
 with "utilada_sys.gpr";
+with "uuids.gpr";
 abstract project Buffalo_Nas_Ctl_Config is
    Crate_Version := "0.1.0-dev";
    Crate_Name := "buffalo_nas_ctl";

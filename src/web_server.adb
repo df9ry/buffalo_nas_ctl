@@ -1,9 +1,8 @@
 with App_Global;            use App_Global;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Calendar;          use Ada.Calendar;
 with Ada.Interrupts;
 with Ada.Interrupts.Names;
-with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Strings.Hash;
 
 with AWS.Config.Set;
 with AWS.Response;
@@ -15,12 +14,14 @@ with AWS.Config;
 with AWS.Messages;
 
 with Log;
+with UUIDs;
+with UUID_Timestamp_Map;
+with WoL_Task;
 
 package body Web_Server is
 
    protected Shutdown_Control is
       entry Wait_Until_Shutdown;
-      procedure Signal_Shutdown;
 
       procedure On_Term_Signal;
       pragma Attach_Handler (On_Term_Signal, Ada.Interrupts.Names.SIGTERM);
@@ -32,35 +33,25 @@ package body Web_Server is
    end Shutdown_Control;
 
    protected body Shutdown_Control is
+
       entry Wait_Until_Shutdown when Done is
       begin
          null;
       end Wait_Until_Shutdown;
 
-      procedure Signal_Shutdown is
-      begin
-         Done := True;
-      end Signal_Shutdown;
-
       procedure On_Term_Signal is
       begin
          Done := True;
       end On_Term_Signal;
+
    end Shutdown_Control;
-
-   package Timestamp_Maps is new
-     Ada.Containers.Indefinite_Hashed_Maps
-       (Key_Type        => String,
-        Element_Type    => String,
-        Hash            => Ada.Strings.Hash,
-        Equivalent_Keys => "=");
-
-   NAS_Map : Timestamp_Maps.Map;
 
    --  Request Handler
    function Request_Handler
      (Request : AWS.Status.Data) return AWS.Response.Data
    is
+      use UUID_Timestamp_Map;
+      use WoL_Task;
 
       function Get_Param
         (Params : AWS.Parameters.List; Param : String) return String is
@@ -76,142 +67,66 @@ package body Web_Server is
       Method : constant String := AWS.Status.Method (Request);
       Params : constant AWS.Parameters.List := AWS.Status.Parameters (Request);
 
-      Guid      : constant String := Get_Param (Params, "guid");
-      Timestamp : constant String := Get_Param (Params, "timestamp");
+      Guid_S : constant String := Get_Param (Params, "guid");
+      Guid   : constant UUIDs.UUID := UUIDs.From_String (Guid_S);
 
-      function JSON_Response
+      function Text_Response
         (Status_Code : AWS.Messages.Status_Code; The_Body : String)
          return AWS.Response.Data is
       begin
          return
            AWS.Response.Build
-             (Content_Type => AWS.MIME.Application_JSON,
+             (Content_Type => AWS.MIME.Text_Plain,
               Message_Body => The_Body,
               Status_Code  => Status_Code);
-      end JSON_Response;
+      end Text_Response;
+
+      function OK_Response return AWS.Response.Data is
+      begin
+         return Text_Response (AWS.Messages.S200, "OK");
+      end OK_Response;
 
    begin
       --  OPTIONS für CORS Preflight
       if Method = "OPTIONS" then
-         --  Einfache leere Response mit Status 200
-         return
-           AWS.Response.Build
-             (Content_Type => AWS.MIME.Text_HTML,
-              Message_Body => "",
-              Status_Code  => AWS.Messages.S200);
+         return Text_Response (AWS.Messages.S200, "");
       end if;
 
       --  POST /nas - Neue/Update GUID
-      if Method = "POST" and then URI = "/nas" then
-         if Guid = "" or else Timestamp = "" then
-            return
-              JSON_Response
-                (AWS.Messages.S400,
-                 "{""error"":""guid and timestamp parameters required""}");
-         end if;
-
-         NAS_Map.Include (Guid, Timestamp);
-
-         return
-           JSON_Response
-             (AWS.Messages.S201,
-              "{""status"":""created/updated"","
-              & """guid"":"""
-              & Guid
-              & """,""timestamp"":"""
-              & Timestamp
-              & """}");
-
-      --  GET /nas - Alle GUIDs
-      elsif Method = "GET" and then URI = "/nas" then
-         declare
-            Result     : Unbounded_String := To_Unbounded_String ("[");
-            First_Item : Boolean := True;
-         begin
-            for C in NAS_Map.Iterate loop
-               if not First_Item then
-                  Append (Result, ",");
-               else
-                  First_Item := False;
-               end if;
-               Append (Result, "{""guid"":""");
-               Append (Result, Timestamp_Maps.Key (C));
-               Append (Result, """,""timestamp"":""");
-               Append (Result, Timestamp_Maps.Element (C));
-               Append (Result, """}");
-            end loop;
-
-            Append (Result, "]");
-
-            return JSON_Response (AWS.Messages.S200, To_String (Result));
-         end;
-
-      --  GET /nas?guid=... - Spezifische GUID
-      elsif Method = "GET" and then URI = "/nas" and then Guid /= "" then
-         if NAS_Map.Contains (Guid) then
-            return
-              JSON_Response
-                (AWS.Messages.S200,
-                 "{""guid"":"""
-                 & Guid
-                 & """,""timestamp"":"""
-                 & NAS_Map.Element (Guid)
-                 & """}");
+      if Method = "POST" then
+         if URI = "/new" then
+            case WoL_Task.Status is
+               when WoL_Task.NAS_OFFLINE =>
+                  Status_Map.Put (Guid, Clock);
+                  WoL_Task.Continue;
+                  return OK_Response;
+               when WoL_Task.NAS_ONLINE =>
+                  Status_Map.Put (Guid, Clock);
+                  return OK_Response;
+               when WoL_Task.NAS_SHUTDOWN =>
+                  return Text_Response (AWS.Messages.S403, "NAS in shutdown");
+               when others =>
+                  return Text_Response (AWS.Messages.S500, "Invalid state");
+            end case;
+         elsif URI = "/del" then
+            Status_Map.Remove (Guid);
+            if Status_Map.Length = 0 and then
+              WoL_Task.Status = WoL_Task.NAS_ONLINE
+            then
+               WoL_Task.Pause;
+            end if;
+            return OK_Response;
          else
             return
-              JSON_Response
-                (AWS.Messages.S404, "{""error"":""GUID not found""}");
+              Text_Response (AWS.Messages.S404, "Not found");
          end if;
-
-      --  DELETE /nas?guid=... - GUID löschen
-      elsif Method = "DELETE" and then URI = "/nas" and then Guid /= "" then
-         if NAS_Map.Contains (Guid) then
-            NAS_Map.Delete (Guid);
-            return
-              JSON_Response
-                (AWS.Messages.S200,
-                 "{""status"":""deleted""," & """guid"":""" & Guid & """}");
-         else
-            return
-              JSON_Response
-                (AWS.Messages.S404, "{""error"":""GUID not found""}");
-         end if;
-
-      --  GET /stats - Statistik
-      elsif Method = "GET" and then URI = "/stats" then
-         return
-           JSON_Response
-             (AWS.Messages.S200,
-              "{""total_guids"":"
-              & Ada.Containers.Count_Type'Image (NAS_Map.Length)
-              & "}");
-
-      else
-         --  Fallback / Hilfe
-         declare
-            Help_Text : constant String :=
-              "<html><body>"
-              & "<h1>NAS API Server</h1>"
-              & "<h2>Endpoints:</h2>"
-              & "<ul>"
-              & "<li>POST /nas?guid={uuid}&timestamp={iso8601} "
-              & "- Add/Update</li>"
-              & "<li>GET /nas - All GUIDs</li>"
-              & "<li>GET /nas?guid={uuid} - Specific GUID</li>"
-              & "<li>DELETE /nas?guid={uuid} - Delete GUID</li>"
-              & "<li>GET /stats - Statistics</li>"
-              & "</ul>"
-              & "</body></html>";
-         begin
-            return AWS.Response.Build (AWS.MIME.Text_HTML, Help_Text);
-         end;
       end if;
+
+      return Text_Response (AWS.Messages.S400, "Invalid method");
 
    exception
       when others =>
-         return
-           JSON_Response
-             (AWS.Messages.S500, "{""error"":""Internal server error""}");
+         return Text_Response (AWS.Messages.S500, "Internal server error");
    end Request_Handler;
 
    procedure Run is

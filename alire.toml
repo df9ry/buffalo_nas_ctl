@@ -16,3 +16,6 @@ utilada = "^2.8.2"
 
 [[depends-on]]
 aws = "^25.2.0"
+
+[[depends-on]]
+uuids = "^1.0.0"

@@ -24,19 +24,17 @@ package UUID_Timestamp_Map is
         Equivalent_Keys => Equivalent_UUIDs);
 
    protected type Protected_UUID_Timestamp_Map is
-      procedure Put (Key : UUIDs.UUID);
-      procedure Put (Key : UUIDs.UUID; Timestamp : Ada.Calendar.Time);
-      function Get (Key : UUIDs.UUID) return Ada.Calendar.Time;
-      function Contains (Key : UUIDs.UUID) return Boolean;
-      procedure Remove (Key : UUIDs.UUID);
-      procedure Clear;
-      function Length return Natural;
-      procedure Cleanup_Dead (T : Ada.Calendar.Time);
-      function Has_Entries return Boolean;
+      procedure Cleanup_Dead;
+      procedure Remove (Id : UUIDs.UUID);
+      procedure Try_Put
+        (Id : UUIDs.UUID; T : Ada.Calendar.Time; Result : out Boolean);
+
    private
       Map : Timestamp_Maps.Map;
    end Protected_UUID_Timestamp_Map;
 
    Status_Map : Protected_UUID_Timestamp_Map;
+
+   function Try_Put (Id : UUIDs.UUID) return Boolean;
 
 end UUID_Timestamp_Map;

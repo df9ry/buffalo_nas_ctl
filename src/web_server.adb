@@ -1,6 +1,5 @@
 with App_Global;            use App_Global;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Calendar;          use Ada.Calendar;
 with Ada.Interrupts;
 with Ada.Interrupts.Names;
 
@@ -16,7 +15,6 @@ with AWS.Messages;
 with Log;
 with UUIDs;
 with UUID_Timestamp_Map;
-with WoL_Task;
 
 package body Web_Server is
 
@@ -51,7 +49,6 @@ package body Web_Server is
      (Request : AWS.Status.Data) return AWS.Response.Data
    is
       use UUID_Timestamp_Map;
-      use WoL_Task;
 
       function Get_Param
         (Params : AWS.Parameters.List; Param : String) return String is
@@ -95,34 +92,19 @@ package body Web_Server is
       --  POST /nas - Neue/Update GUID
       if Method = "POST" then
          if URI = "/new" then
-            case WoL_Task.Status is
-               when WoL_Task.NAS_OFFLINE =>
-                  Status_Map.Put (Guid, Clock);
-                  WoL_Task.Continue;
-                  return OK_Response;
-               when WoL_Task.NAS_ONLINE =>
-                  Status_Map.Put (Guid, Clock);
-                  return OK_Response;
-               when WoL_Task.NAS_SHUTDOWN =>
-                  return Text_Response (AWS.Messages.S403, "NAS in shutdown");
-               when others =>
-                  return Text_Response (AWS.Messages.S500, "Invalid state");
-            end case;
+            if not Try_Put (Guid) then
+               return Text_Response (AWS.Messages.S403, "NAS in shutdown");
+            end if;
          elsif URI = "/del" then
             Status_Map.Remove (Guid);
-            if Status_Map.Length = 0 and then
-              WoL_Task.Status = WoL_Task.NAS_ONLINE
-            then
-               WoL_Task.Pause;
-            end if;
-            return OK_Response;
          else
-            return
-              Text_Response (AWS.Messages.S404, "Not found");
+            return Text_Response (AWS.Messages.S404, "Not found: " & URI);
          end if;
+         return OK_Response;
       end if;
 
-      return Text_Response (AWS.Messages.S400, "Invalid method");
+      --  Other method:
+      return Text_Response (AWS.Messages.S404, "Invalid method: " & Method);
 
    exception
       when others =>

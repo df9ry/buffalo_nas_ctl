@@ -1,4 +1,3 @@
-with Ada.Calendar;
 with Ada.Real_Time;
 with Log;
 with App_Global;
@@ -6,7 +5,6 @@ with Wake_On_Lan;
 with UUID_Timestamp_Map; use UUID_Timestamp_Map;
 
 package body WoL_Task is
-   use Ada.Calendar;
    use Ada.Real_Time;
 
    protected body Status_Monitor is
@@ -31,12 +29,6 @@ package body WoL_Task is
       begin
          return To_Duration (TS);
       end To_Dur;
-
-      function Check_Clients return Boolean is
-      begin
-         Status_Map.Cleanup_Dead (Clock);
-         return Status_Map.Has_Entries;
-      end Check_Clients;
 
    begin
       Status_Monitor.Set_Status (Status);
@@ -66,6 +58,7 @@ package body WoL_Task is
 
             when NAS_OFFLINE =>
                Log.Debug ("NAS_OFFLINE");
+               Status_Map.Cleanup_Dead;
                select
                   accept Shutdown do
                      Log.Debug ("Received Shutdown in NAS_OFFLINE");
@@ -78,17 +71,18 @@ package body WoL_Task is
                or
                   accept Continue do
                      Log.Debug ("Received Continue in NAS_OFFLINE");
-                     if Check_Clients then
-                        Status := NAS_ONLINE;
-                        Status_Monitor.Set_Status (Status);
+                     if Status = NAS_ONLINE then
                         Log.Debug ("Sending WoL");
                         Wake_On_Lan.Send;
+                     else
+                        Log.Warning ("Spurious Continue");
                      end if;
                   end Continue;
                end select;
 
             when NAS_ONLINE =>
-               Log.Debug ("NAS_ONLINEWoL");
+               Log.Debug ("NAS_ONLINE");
+               Status_Map.Cleanup_Dead;
                select
                   accept Shutdown do
                      Log.Debug ("Shutdown received");
@@ -110,15 +104,13 @@ package body WoL_Task is
                   Log.Debug ("Delay {1}s for next WoL", WoL_Interval'Image);
                   delay To_Dur (WoL_Interval);
                   Log.Debug ("Delay finished");
-                  if Check_Clients then
+                  if Status = NAS_ONLINE then
                      Wake_On_Lan.Send;
-                  else
-                     Status := NAS_SHUTDOWN;
-                     Status_Monitor.Set_Status (Status);
                   end if;
                end select;
 
             when NAS_SHUTDOWN =>
+               Status_Map.Cleanup_Dead;
                select
                   accept Shutdown do
                      Log.Debug ("Emergency shutdown during block");

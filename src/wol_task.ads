@@ -23,6 +23,4 @@ package WoL_Task is
    procedure Continue;
    procedure Shutdown;
 
-   function Status return NAS_Status;
-
 end WoL_Task;

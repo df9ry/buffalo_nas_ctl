@@ -193,8 +193,6 @@ begin
          Svc_Port := Svc_Port_Default;
       end if;
    end if;
-   --  Set Log Level:
-   --  Log.Set_Level (To_String (App_Log_Level));
    Log.Set_Level (Log.Debug);
    Log.Info ("This is "  & App_Name &
              " version " & App_Version &

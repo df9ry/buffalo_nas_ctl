@@ -24,10 +24,11 @@ package UUID_Timestamp_Map is
         Equivalent_Keys => Equivalent_UUIDs);
 
    protected type Protected_UUID_Timestamp_Map is
-      procedure Cleanup_Dead;
+      procedure Cleanup_Dead (Empty : out Boolean);
       procedure Remove (Id : UUIDs.UUID);
       procedure Try_Put
         (Id : UUIDs.UUID; T : Ada.Calendar.Time; Result : out Boolean);
+      function Is_Empty return Boolean;
 
    private
       Map : Timestamp_Maps.Map;
@@ -36,5 +37,6 @@ package UUID_Timestamp_Map is
    Status_Map : Protected_UUID_Timestamp_Map;
 
    function Try_Put (Id : UUIDs.UUID) return Boolean;
+   function Have_Active_Clients return Boolean;
 
 end UUID_Timestamp_Map;

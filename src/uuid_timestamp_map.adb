@@ -30,10 +30,6 @@ package body UUID_Timestamp_Map is
          use WoL_Task;
       begin
          Map.Delete (Id);
-         if Is_Empty and then Status_Monitor.Get_Status = NAS_ONLINE
-         then
-            Pause;
-         end if;
       end Remove;
 
       procedure Try_Put
@@ -42,15 +38,8 @@ package body UUID_Timestamp_Map is
          use WoL_Task;
          use Ada.Exceptions;
       begin
-         if Status_Monitor.Get_Status = NAS_SHUTDOWN then
-            Result := False;
-         else
-            Map.Include (Id, T);
-            Result := True;
-            if Status_Monitor.Get_Status = NAS_OFFLINE then
-               Continue;
-            end if;
-         end if;
+         Map.Include (Id, T);
+         Result := True;
       exception
          when E : others =>
             Log.Error ("Error: " & Exception_Message (E));

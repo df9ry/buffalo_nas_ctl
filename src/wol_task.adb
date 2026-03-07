@@ -1,137 +1,80 @@
-with Ada.Real_Time;
-with Log;
 with App_Global;
 with Wake_On_Lan;
-with UUID_Timestamp_Map; use UUID_Timestamp_Map;
+with Log;
 
 package body WoL_Task is
-   use Ada.Real_Time;
 
-   protected body Status_Monitor is
-      function Get_Status return NAS_Status is
-      begin
-         return Current_Status;
-      end Get_Status;
+   protected body Task_Monitor is
 
-      procedure Set_Status (New_Status : NAS_Status) is
+      function Get_Next_Execution_Time return Time is
       begin
-         Log.Debug ("Set status to " & New_Status'Image);
-         Current_Status := New_Status;
-      end Set_Status;
-   end Status_Monitor;
+         return Next_Execution_Time;
+      end Get_Next_Execution_Time;
+
+      procedure Set_Next_Execution_Time (New_Time : Time) is
+      begin
+         Log.Debug ("Set next execution to " & Next_Execution_Time'Image);
+         Next_Execution_Time := New_Time;
+      end Set_Next_Execution_Time;
+
+   end Task_Monitor;
 
    task body Worker is
-      WoL_Interval : Time_Span := Seconds (3600);
-      Block_Time   : Time_Span := Seconds (3600);
-      Is_Running   : Boolean := True;
-
-      function To_Dur (TS : Time_Span) return Duration is
-      begin
-         return To_Duration (TS);
-      end To_Dur;
-
+      Quit      : Boolean := False;
+      Interval  : Duration;
+      Now, Last : Time;
    begin
-      Status_Monitor.Set_Status (NOT_STARTED);
-      Log.Debug ("Task started, initial status: NAS_OFFLINE");
-
-      while Is_Running loop
-         Log.Debug ("In loop: Status is " & Status_Monitor.Get_Status'Image);
-         case Status_Monitor.Get_Status is
-            when NOT_STARTED =>
-               select
-                  accept Start do
-                     Log.Debug ("Received Start");
-                     WoL_Interval := Seconds (App_Global.WoL_Interval);
-                     Block_Time := Seconds (App_Global.NAS_Shutdown);
-                     Log.Debug ("WoL_Interval is " & WoL_Interval'Image);
-                     Log.Debug ("Block_Time is " & Block_Time'Image);
-                     Status_Monitor.Set_Status (NAS_OFFLINE);
-                  end Start;
-               or
-                  accept Shutdown do
-                     Log.Debug ("Received Shutdown in NOT_STARTED");
-                     Is_Running := False;
-                  end Shutdown;
-               end select;
-
-            when NAS_OFFLINE =>
-               select
-                  accept Shutdown do
-                     Log.Debug ("Received Shutdown");
-                     Is_Running := False;
-                  end Shutdown;
-               or
-                  accept Pause do
-                     Log.Error ("Received Pause in NAS_OFFLINE, ignored");
-                  end Pause;
-               or
-                  accept Continue do
-                     Log.Debug ("Received Continue in NAS_OFFLINE");
-                     if Have_Active_Clients then
-                        Status_Monitor.Set_Status (NAS_ONLINE);
-                        Log.Debug ("Sending WoL");
-                        Wake_On_Lan.Send;
-                     else
-                        Log.Warning ("Spurious Continue, ignored");
-                     end if;
-                  end Continue;
-               end select;
-
-            when NAS_ONLINE =>
-               select
-                  accept Shutdown do
-                     Log.Debug ("Shutdown received");
-                     Is_Running := False;
-                  end Shutdown;
-               or
-                  accept Pause do
-                     Log.Debug ("Pause received");
-                     if not Have_Active_Clients then
-                        Status_Monitor.Set_Status (NAS_SHUTDOWN);
-                     else
-                        Log.Warning ("Received spurious Pause, ignored");
-                     end if;
-                  end Pause;
-               or
-                  accept Continue do
-                     Log.Warning ("Received Continue in NAS_ONLINE, ignored");
-                  end Continue;
-               else
-                  Log.Debug ("Delay " & WoL_Interval'Image & "s for next WoL");
-                  delay To_Dur (WoL_Interval);
-                  Log.Debug ("Delay finished");
-                  if Have_Active_Clients then
-                     Wake_On_Lan.Send;
-                  else
-                     Status_Monitor.Set_Status (NAS_OFFLINE);
-                  end if;
-               end select;
-
-            when NAS_SHUTDOWN =>
-               select
-                  accept Shutdown do
-                     Log.Debug ("Shutdown during block");
-                     Is_Running := False;
-                  end Shutdown;
-               or
-                  accept Pause do
-                     Log.Error ("Received Pause in NAS_SHUTDOWN, ignored");
-                  end Pause;
-               or
-                  accept Continue do
-                     Log.Error ("Received Continue in NAS_SHUTDOWN, ignored");
-                  end Continue;
-               else
-                  Log.Debug ("Delay " & Block_Time'Image &
-                               "s for NAS shutdown");
-                  delay To_Dur (Block_Time);
-                  Log.Debug ("Block period completed");
-                  Status_Monitor.Set_Status (NAS_OFFLINE);
-               end select;
-         end case;
+      select
+         accept Start do
+            Interval := Duration (App_Global.WoL_Interval);
+         end Start;
+         accept Shutdown do
+            return;
+         end Shutdown;
+      end select;
+      while not Quit loop
+         Log.Debug ("WoL_Task loop begin");
+         select
+            accept Shutdown do
+               Log.Debug ("WoL_Task received Shutdown");
+               Quit := True;
+            end Shutdown;
+         or
+            accept Start do
+               Log.Debug ("WoL_Task received Start");
+               Now := Clock;
+               if (Now > Task_Monitor.Get_Next_Execution_Time) then
+                  Task_Monitor.Set_Next_Execution_Time (Now + Interval);
+                  Wake_On_Lan.Send;
+               end if;
+               Log.Debug
+                 ("Next_Execution_Time is "
+                  & Task_Monitor.Get_Next_Execution_Time'Image);
+            end Start;
+         or
+            accept Stop do
+               Log.Debug ("WoL_Task received Stop");
+               Task_Monitor.Set_Next_Execution_Time (Eternal);
+               Log.Debug
+                 ("Next_Execution_Time is "
+                  & Task_Monitor.Get_Next_Execution_Time'Image);
+            end Stop;
+         or
+            delay until Task_Monitor.Get_Next_Execution_Time;
+            Now := Clock;
+            Last := Task_Monitor.Get_Next_Execution_Time;
+            if (Now >= Last) then
+               Task_Monitor.Set_Next_Execution_Time (Last + Interval);
+               Wake_On_Lan.Send;
+               Log.Debug
+                 ("Next_Execution_Time is "
+                  & Task_Monitor.Get_Next_Execution_Time'Image);
+            else
+               Log.Debug ("No Execution scheduled");
+            end if;
+         end select;
       end loop;
-
-      Log.Info ("WoL_Task terminated");
+      Log.Info ("WoL_Task loop exited");
    end Worker;
 
    procedure Start is
@@ -139,15 +82,10 @@ package body WoL_Task is
       Worker.Start;
    end Start;
 
-   procedure Pause is
+   procedure Stop is
    begin
-      Worker.Pause;
-   end Pause;
-
-   procedure Continue is
-   begin
-      Worker.Continue;
-   end Continue;
+      Worker.Stop;
+   end Stop;
 
    procedure Shutdown is
    begin

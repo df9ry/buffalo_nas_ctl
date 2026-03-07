@@ -1,9 +1,11 @@
 with Ada.Strings;           use Ada.Strings;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
+with Ada.Calendar;          use Ada.Calendar;
 with Ada.Interrupts;
 with Ada.Interrupts.Names;
 with App_Global;            use App_Global;
+with WoL_Task;              use WoL_Task;
 with AWS.Config.Set;
 with AWS.Response;
 with AWS.Server;
@@ -77,6 +79,10 @@ package body Web_Server is
          return Text_Response (AWS.Messages.S200, "OK");
       end OK_Response;
 
+   Last_Shutdown : Time := Long_Long_Ago;
+   Last_Touch    : Time := Long_Long_Ago;
+   Guid          : UUIDs.UUID;
+
    begin
       Log.Debug ("Received Method:" & Method & " with URI """ & URI & """");
       if Method = "OPTIONS" then
@@ -84,25 +90,15 @@ package body Web_Server is
       elsif Method = "GET" then
          if URI = "/health" then
             return OK_Response;
+         elsif URI = "/create" then
+            null;
+         elsif URI = "/update" then
+            null;
          else
             return Text_Response (AWS.Messages.S404, "Not found: " & URI);
          end if;
-      elsif Method = "POST" then
-         declare
-            Guid_S : constant String := Get_Param (Params, "guid");
-            Guid   : constant UUIDs.UUID := UUIDs.From_String (Guid_S);
-         begin
-            if URI = "/new" then
-               if not Try_Put (Guid) then
-                  return Text_Response (AWS.Messages.S403, "NAS in shutdown");
-               end if;
-            elsif URI = "/del" then
-               Status_Map.Remove (Guid);
-            else
-               return Text_Response (AWS.Messages.S404, "Not found: " & URI);
-            end if;
-            return OK_Response;
-         end;
+      elsif Method = "DELETE" then
+         return OK_Response;
       end if;
 
       --  Other method:
@@ -181,6 +177,7 @@ package body Web_Server is
       end if;
 
       AWS.Server.Shutdown (Server);
+      WoL_Task.Shutdown;
       Log.Info ("Server stopped.");
    end Run;
 end Web_Server;

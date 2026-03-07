@@ -4,7 +4,6 @@ with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;
 with Ada.Environment_Variables;
 with Ada.Containers.Vectors;
-with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package body Log is
 
@@ -154,6 +153,11 @@ package body Log is
          raise Constraint_Error with "Ungültiger Log-Level: '" & S & "'";
       end if;
       Protected_Log.Log (Info, "Log-Level changed to " & Upper_S);
+   end Set_Level;
+
+   procedure Set_Level (S : Unbounded_String) is
+   begin
+      Set_Level (To_String (S));
    end Set_Level;
 
    function Current_Level return Log_Level

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xmi:id="_model_buffalonas" name="buffalo_nas_ctl">
+  <packagedElement xmi:type="uml:StateMachine" xmi:id="_statemachine_main" name="BuffaloNAS_StateMachine">
+    <region xmi:type="uml:Region" xmi:id="_region_main" name="MainRegion">
+      <transition xmi:type="uml:Transition" xmi:id="_trans_start" source="_state_offline" target="_state_online">
+        <trigger xmi:type="uml:Trigger" xmi:id="_trigger_start" name="New_Client"/>
+      </transition>
+      <transition xmi:type="uml:Transition" xmi:id="_trans_gracetimeout" source="_state_online" target="_state_shutdown">
+        <trigger xmi:type="uml:Trigger" xmi:id="_trigger_gracetimeout" name="GracePeriod_Timeout" event="_event_gracetimeout"/>
+      </transition>
+      <transition xmi:type="uml:Transition" xmi:id="_trans_shutdowncomplete" source="_state_shutdown" target="_state_offline">
+        <trigger xmi:type="uml:Trigger" xmi:id="_trigger_shutdowncomplete" name="Shutdown_Complete" event="_event_shutdowncomplete"/>
+      </transition>
+      <transition xmi:type="uml:Transition" xmi:id="_trans_globalshutdown" target="_state_shutdown">
+        <trigger xmi:type="uml:Trigger" xmi:id="_trigger_globalshutdown" name="Shutdown_Signal"/>
+      </transition>
+      <subvertex xmi:type="uml:State" xmi:id="_state_offline" name="NAS_OFFLINE">
+        <entry xmi:type="uml:OpaqueBehavior" xmi:id="_entry_offline">
+          <body>// NAS ist offline, WOL deaktiviert</body>
+        </entry>
+      </subvertex>
+      <subvertex xmi:type="uml:State" xmi:id="_state_online" name="NAS_ONLINE">
+        <entry xmi:type="uml:OpaqueBehavior" xmi:id="_entry_online">
+          <body>sendWOL(); // Erstes WOL-Paket
+startPeriodicWOLTimer(60); // Timer für alle 60s</body>
+        </entry>
+        <exit xmi:type="uml:OpaqueBehavior" xmi:id="_exit_online">
+          <body>stopPeriodicWOLTimer();</body>
+        </exit>
+        <region xmi:type="uml:Region" xmi:id="_region_clients" name="ClientManagementRegion">
+          <transition xmi:type="uml:Transition" xmi:id="_trans_newclient" source="_state_noclients" target="_state_hasclients">
+            <effect xmi:type="uml:OpaqueBehavior" xmi:id="_effect_newclient">
+              <body>addClient(clientID);
+resetClientTimer(clientID);</body>
+            </effect>
+            <trigger xmi:type="uml:Trigger" xmi:id="_trigger_newclient" name="New_Client"/>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="_trans_updateclient" source="_state_hasclients" target="_state_hasclients">
+            <effect xmi:type="uml:OpaqueBehavior" xmi:id="_effect_updateclient">
+              <body>updateClientTimer(clientID);</body>
+            </effect>
+            <trigger xmi:type="uml:Trigger" xmi:id="_trigger_updateclient" name="Update_Client"/>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="_trans_clientremoved" source="_state_hasclients" target="_state_noclients">
+            <effect xmi:type="uml:OpaqueBehavior" xmi:id="_effect_deleteclient">
+              <body>removeClient(clientID);
+if (clientCount == 0) {
+  // Automatisch zu No_Clients
+}</body>
+            </effect>
+            <trigger xmi:type="uml:Trigger" xmi:id="_trigger_deleteclient" name="Delete_Client"/>
+          </transition>
+          <subvertex xmi:type="uml:Pseudostate" xmi:id="_pseudo_initial_inner"/>
+          <subvertex xmi:type="uml:State" xmi:id="_state_noclients" name="No_Clients">
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="_entry_noclients">
+              <body>startGracePeriodTimer(120); // 120s Grace Period</body>
+            </entry>
+            <exit xmi:type="uml:OpaqueBehavior" xmi:id="_exit_noclients">
+              <body>cancelGracePeriodTimer();</body>
+            </exit>
+          </subvertex>
+          <subvertex xmi:type="uml:State" xmi:id="_state_hasclients" name="Has_Clients">
+            <doActivity xmi:type="uml:OpaqueBehavior" xmi:id="_do_hasclients">
+              <body>// Überwacht Client-Updates alle 60s
+checkClientTimeouts();</body>
+            </doActivity>
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="_entry_hasclients">
+              <body>// Client aktiviert</body>
+            </entry>
+          </subvertex>
+        </region>
+      </subvertex>
+      <subvertex xmi:type="uml:State" xmi:id="_state_shutdown" name="NAS_SHUTDOWN">
+        <doActivity xmi:type="uml:OpaqueBehavior" xmi:id="_do_shutdown">
+          <body>// Keine neuen Clients akzeptieren</body>
+        </doActivity>
+        <entry xmi:type="uml:OpaqueBehavior" xmi:id="_entry_shutdown">
+          <body>stopAllTimers();
+startShutdownTimer(300); // 300s Shutdown Phase</body>
+        </entry>
+      </subvertex>
+      <subvertex xmi:type="uml:Pseudostate" xmi:id="_pseudo_initial"/>
+    </region>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Signal" xmi:id="_signal_newclient" name="New_Client"/>
+  <packagedElement xmi:type="uml:Signal" xmi:id="_signal_updateclient" name="Update_Client"/>
+  <packagedElement xmi:type="uml:Signal" xmi:id="_signal_deleteclient" name="Delete_Client"/>
+  <packagedElement xmi:type="uml:Signal" xmi:id="_signal_shutdown" name="Shutdown_Signal"/>
+</uml:Model>

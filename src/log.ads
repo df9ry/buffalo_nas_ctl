@@ -1,4 +1,4 @@
-with Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package Log is
 
@@ -7,6 +7,7 @@ package Log is
    --  Setzt den globalen Log-Level (wirkt sofort in allen Tasks)
    procedure Set_Level (Level : Log_Level);
    procedure Set_Level (S : String);
+   procedure Set_Level (S : Unbounded_String);
 
    --  Aktueller Log-Level
    function Current_Level return Log_Level;
@@ -22,21 +23,21 @@ package Log is
    --  Formatierte Logs mit einem Argument
    procedure Trace   (Template : String; Arg : String);
    procedure Trace   (Template : String;
-                      Arg : Ada.Strings.Unbounded.Unbounded_String);
+                      Arg : Unbounded_String);
    procedure Trace   (Template : String; Arg : Integer);
    procedure Trace   (Template : String; Arg : Float);
    procedure Trace   (Template : String; Arg : Boolean);
 
    procedure Debug   (Template : String; Arg : String);
    procedure Debug   (Template : String;
-                      Arg : Ada.Strings.Unbounded.Unbounded_String);
+                      Arg : Unbounded_String);
    procedure Debug   (Template : String; Arg : Integer);
    procedure Debug   (Template : String; Arg : Float);
    procedure Debug   (Template : String; Arg : Boolean);
 
    procedure Info    (Template : String; Arg : String);
    procedure Info    (Template : String;
-                      Arg : Ada.Strings.Unbounded.Unbounded_String);
+                      Arg : Unbounded_String);
    procedure Info    (Template : String; Arg : Integer);
    procedure Info    (Template : String; Arg : Float);
    procedure Info    (Template : String; Arg : Boolean);
@@ -50,36 +51,30 @@ package Log is
 
    procedure Error   (Template : String; Arg : String);
    procedure Error   (Template : String;
-                      Arg : Ada.Strings.Unbounded.Unbounded_String);
+                      Arg : Unbounded_String);
    procedure Error   (Template : String; Arg : Integer);
    procedure Error   (Template : String; Arg : Float);
    procedure Error   (Template : String; Arg : Boolean);
 
    procedure Fatal   (Template : String; Arg : String);
    procedure Fatal   (Template : String;
-                      Arg : Ada.Strings.Unbounded.Unbounded_String);
+                      Arg : Unbounded_String);
    procedure Fatal   (Template : String; Arg : Integer);
    procedure Fatal   (Template : String; Arg : Float);
    procedure Fatal   (Template : String; Arg : Boolean);
 
    --  Formatierte Logs mit bis zu 4 Argumenten (alle als Unbounded_String)
    procedure Debug (Template : String;
-                    Arg1 : Ada.Strings.Unbounded.Unbounded_String;
-                    Arg2 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String;
-                    Arg3 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String;
-                    Arg4 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String);
+                    Arg1 : Unbounded_String;
+                    Arg2 : Unbounded_String := Null_Unbounded_String;
+                    Arg3 : Unbounded_String := Null_Unbounded_String;
+                    Arg4 : Unbounded_String := Null_Unbounded_String);
 
    procedure Info  (Template : String;
-                    Arg1 : Ada.Strings.Unbounded.Unbounded_String;
-                    Arg2 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String;
-                    Arg3 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String;
-                    Arg4 : Ada.Strings.Unbounded.Unbounded_String :=
-                      Ada.Strings.Unbounded.Null_Unbounded_String);
+                    Arg1 : Unbounded_String;
+                    Arg2 : Unbounded_String := Null_Unbounded_String;
+                    Arg3 : Unbounded_String := Null_Unbounded_String;
+                    Arg4 : Unbounded_String := Null_Unbounded_String);
 
    --  Einmalige Initialisierung (optional – wird sonst lazy beim ersten Log
    --  gemacht)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xmi:id="__Fzv8AUUEfGkW4nAYCf-9A" name="buffalo_nas_ctl">
+  <packageImport xmi:type="uml:PackageImport" xmi:id="__QYBMAUUEfGkW4nAYCf-9A">
+    <importedPackage xmi:type="uml:Model" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#_0"/>
+  </packageImport>
+  <packagedElement xmi:type="uml:Activity" xmi:id="__N4t4AUUEfGkW4nAYCf-9A" name="Activity1"/>
+  <packagedElement xmi:type="uml:StateMachine" xmi:id="_YxSPoAUVEfGkW4nAYCf-9A" name="StateMachine3">
+    <region xmi:type="uml:Region" xmi:id="_cFrYkAUVEfGkW4nAYCf-9A" name="Region1"/>
+  </packagedElement>
+</uml:Model>

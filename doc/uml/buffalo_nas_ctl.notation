@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.3/notation" xmlns:style="http://www.eclipse.org/papyrus/infra/gmfdiag/style" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML">
+  <notation:Diagram xmi:id="__OkqYAUUEfGkW4nAYCf-9A" type="PapyrusUMLActivityDiagram" name="Activity Diagram" measurementUnit="Pixel">
+    <children xmi:type="notation:Shape" xmi:id="__OkqYQUUEfGkW4nAYCf-9A" type="Activity_Shape">
+      <children xmi:type="notation:DecorationNode" xmi:id="__OkqYgUUEfGkW4nAYCf-9A" type="Activity_NameLabel"/>
+      <children xmi:type="notation:DecorationNode" xmi:id="__OkqYwUUEfGkW4nAYCf-9A" type="Activity_KeywordLabel"/>
+      <children xmi:type="notation:BasicCompartment" xmi:id="__OkqZAUUEfGkW4nAYCf-9A" type="Activity_ParameterCompartment">
+        <styles xmi:type="notation:SortingStyle" xmi:id="__OkqZQUUEfGkW4nAYCf-9A"/>
+        <styles xmi:type="notation:FilteringStyle" xmi:id="__OkqZgUUEfGkW4nAYCf-9A"/>
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="__OkqZwUUEfGkW4nAYCf-9A"/>
+      </children>
+      <children xmi:type="notation:BasicCompartment" xmi:id="__OkqaAUUEfGkW4nAYCf-9A" type="Activity_PreconditionCompartment">
+        <styles xmi:type="notation:SortingStyle" xmi:id="__OkqaQUUEfGkW4nAYCf-9A"/>
+        <styles xmi:type="notation:FilteringStyle" xmi:id="__OkqagUUEfGkW4nAYCf-9A"/>
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="__OkqawUUEfGkW4nAYCf-9A"/>
+      </children>
+      <children xmi:type="notation:BasicCompartment" xmi:id="__OkqbAUUEfGkW4nAYCf-9A" type="Activity_PostconditionCompartment">
+        <styles xmi:type="notation:SortingStyle" xmi:id="__OkqbQUUEfGkW4nAYCf-9A"/>
+        <styles xmi:type="notation:FilteringStyle" xmi:id="__OkqbgUUEfGkW4nAYCf-9A"/>
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="__OkqbwUUEfGkW4nAYCf-9A"/>
+      </children>
+      <children xmi:type="notation:BasicCompartment" xmi:id="__OkqcAUUEfGkW4nAYCf-9A" type="Activity_ActivityNodeCompartment">
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="__OkqcQUUEfGkW4nAYCf-9A"/>
+      </children>
+      <element xmi:type="uml:Activity" href="buffalo_nas_ctl.uml#__N4t4AUUEfGkW4nAYCf-9A"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="__OkqcgUUEfGkW4nAYCf-9A"/>
+    </children>
+    <styles xmi:type="notation:StringValueStyle" xmi:id="__OkqcwUUEfGkW4nAYCf-9A" name="diagram_compatibility_version" stringValue="1.4.0"/>
+    <styles xmi:type="notation:DiagramStyle" xmi:id="__OkqdAUUEfGkW4nAYCf-9A"/>
+    <styles xmi:type="style:PapyrusDiagramStyle" xmi:id="__OkqdQUUEfGkW4nAYCf-9A" diagramKindId="org.eclipse.papyrus.uml.diagram.activity">
+      <owner xmi:type="uml:Model" href="buffalo_nas_ctl.uml#__Fzv8AUUEfGkW4nAYCf-9A"/>
+    </styles>
+    <element xmi:type="uml:Activity" href="buffalo_nas_ctl.uml#__N4t4AUUEfGkW4nAYCf-9A"/>
+  </notation:Diagram>
+  <notation:Diagram xmi:id="__O1JEAUUEfGkW4nAYCf-9A" type="PapyrusUMLClassDiagram" name="Class Diagram" measurementUnit="Pixel">
+    <styles xmi:type="notation:StringValueStyle" xmi:id="__O1JEQUUEfGkW4nAYCf-9A" name="diagram_compatibility_version" stringValue="1.4.0"/>
+    <styles xmi:type="notation:DiagramStyle" xmi:id="__O1JEgUUEfGkW4nAYCf-9A"/>
+    <styles xmi:type="style:PapyrusDiagramStyle" xmi:id="__O1JEwUUEfGkW4nAYCf-9A" diagramKindId="org.eclipse.papyrus.uml.diagram.class">
+      <owner xmi:type="uml:Model" href="buffalo_nas_ctl.uml#__Fzv8AUUEfGkW4nAYCf-9A"/>
+    </styles>
+    <element xmi:type="uml:Model" href="buffalo_nas_ctl.uml#__Fzv8AUUEfGkW4nAYCf-9A"/>
+  </notation:Diagram>
+  <notation:Diagram xmi:id="_cFtNwAUVEfGkW4nAYCf-9A" type="PapyrusUMLStateMachineDiagram" name="WoL_Task_State_Machine" measurementUnit="Pixel">
+    <children xmi:type="notation:Shape" xmi:id="_cFtNwQUVEfGkW4nAYCf-9A" type="StateMachine_Shape">
+      <children xmi:type="notation:DecorationNode" xmi:id="_cFtNwgUVEfGkW4nAYCf-9A" type="StateMachine_NameLabel">
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cFtNwwUVEfGkW4nAYCf-9A" width="700" height="5"/>
+      </children>
+      <children xmi:type="notation:BasicCompartment" xmi:id="_cFtNxAUVEfGkW4nAYCf-9A" type="StateMachine_RegionCompartment">
+        <children xmi:type="notation:Shape" xmi:id="_cFtNxQUVEfGkW4nAYCf-9A" type="Region_Shape" fontName="Adwaita Mono">
+          <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_cFtNxgUVEfGkW4nAYCf-9A" source="RegionAnnotationKey">
+            <details xmi:type="ecore:EStringToStringMapEntry" xmi:id="_cFtNxwUVEfGkW4nAYCf-9A" key="RegionZoneKey" value=""/>
+          </eAnnotations>
+          <children xmi:type="notation:BasicCompartment" xmi:id="_cFtNyAUVEfGkW4nAYCf-9A" type="Region_SubvertexCompartment">
+            <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cFtNyQUVEfGkW4nAYCf-9A"/>
+          </children>
+          <element xmi:type="uml:Region" href="buffalo_nas_ctl.uml#_cFrYkAUVEfGkW4nAYCf-9A"/>
+          <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cFtNygUVEfGkW4nAYCf-9A" width="700" height="280"/>
+        </children>
+        <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cFtNywUVEfGkW4nAYCf-9A" y="5" width="700" height="295"/>
+      </children>
+      <element xmi:type="uml:StateMachine" href="buffalo_nas_ctl.uml#_YxSPoAUVEfGkW4nAYCf-9A"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_cFtNzAUVEfGkW4nAYCf-9A" x="30" y="30" width="700" height="300"/>
+    </children>
+    <styles xmi:type="notation:StringValueStyle" xmi:id="_cFtNzQUVEfGkW4nAYCf-9A" name="diagram_compatibility_version" stringValue="1.4.0"/>
+    <styles xmi:type="notation:DiagramStyle" xmi:id="_cFtNzgUVEfGkW4nAYCf-9A"/>
+    <styles xmi:type="style:PapyrusDiagramStyle" xmi:id="_cFtNzwUVEfGkW4nAYCf-9A" diagramKindId="org.eclipse.papyrus.uml.diagram.stateMachine">
+      <owner xmi:type="uml:Model" href="buffalo_nas_ctl.uml#__Fzv8AUUEfGkW4nAYCf-9A"/>
+    </styles>
+    <element xmi:type="uml:StateMachine" href="buffalo_nas_ctl.uml#_YxSPoAUVEfGkW4nAYCf-9A"/>
+  </notation:Diagram>
+</xmi:XMI>

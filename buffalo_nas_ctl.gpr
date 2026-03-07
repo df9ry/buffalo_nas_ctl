@@ -2,16 +2,17 @@ with "config/buffalo_nas_ctl_config.gpr";
 
 project Buffalo_Nas_Ctl is
 
-   for Source_Dirs use ("scripts", "src", "config");
+   for Source_Dirs use ("scripts", "src", "config", "etc");
    for Object_Dir use "obj/" & Buffalo_Nas_Ctl_Config.Build_Profile;
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
    for Main use ("buffalo_nas_ctl.adb");
-   for Languages use ("Ada", "Shell");
+   for Languages use ("Ada", "Shell", "Config");
 
    package Compiler is
       for Default_Switches ("ada") use ("-Og", "-ffunction-sections", "-fdata-sections", "-g", "-gnatW8", "-gnat2022", "-gnatVa", "-gnatwa.X", "-gnatyaABbc-defhiIklM79nOprStux");
       for Driver ("shell") use "";
+      for Driver ("Config") use "";
    end Compiler;
 
    package Binder is
@@ -24,8 +25,9 @@ project Buffalo_Nas_Ctl is
 
    package Naming is
       for Spec_Suffix ("shell") use ".sh";
-      for Body_Suffix ("shell") use "";
+      for Body_Suffix ("shell") use "._sh";
+      for Spec_Suffix ("Config") use ".conf";
+      for Body_Suffix ("Config") use "._conf";
    end Naming;
 
 end Buffalo_Nas_Ctl;
-

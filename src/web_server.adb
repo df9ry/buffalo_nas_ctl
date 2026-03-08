@@ -90,8 +90,8 @@ package body Web_Server is
             end if;
             return Json_Response (AWS.Messages.S503,
                                   "{""error"":""Server shutdown""," &
-                                    """retry_after"":" &
-                                    Image (Retry_After) & "}");
+                                    """retry_after"":""" &
+                                    Image (Retry_After) & """}");
          else
             return Json_Response (AWS.Messages.S404,
                                   "{""error"":""Not found: " &

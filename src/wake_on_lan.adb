@@ -2,6 +2,7 @@ with Ada.Exceptions;
 with Ada.Streams;           use Ada.Streams;
 with Ada.Strings;           use Ada.Strings;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
 
 with GNAT.Sockets; use GNAT.Sockets;
 
@@ -29,22 +30,27 @@ package body Wake_On_Lan is
       end loop;
 
       --  UDP Socket vorbereiten
-      Create_Socket (Socket);
+      Create_Socket (Socket, Family_Inet, Socket_Datagram);
+      --  Create_Socket (Socket);
       Set_Socket_Option
         (Socket, Socket_Level, (Name => Broadcast, Enabled => True));
 
       Address.Addr := Inet_Addr (To_String (WoL_Target));
       Address.Port := Port_Type (App_Global.WoL_Port);
 
-      Send_Socket (Socket, Packet, Last, Address);
+      --  Send three times
+      for I in 1 .. 3 loop
+         Send_Socket (Socket, Packet, Last, Address);
+      end loop;
 
       Close_Socket (Socket);
 
-      Log.Info ("Wake-on-LAN packet sent to [{1}] -> Broadcast {2}:{3}",
-                WoL_Mac, WoL_Target, To_Unbounded_String (WoL_Port'Image));
+      Log.Info ("Wake-on-LAN packet sent to [" & To_String (WoL_Mac) &
+                  "] -> Broadcast " & To_String (WoL_Target) & ":" &
+                  Trim (WoL_Port'Image, Both));
    exception
       when E : others =>
-         Log.Error ("Error sending the WoL packet: {1}",
+         Log.Error ("Error sending the WoL packet: " &
                     Ada.Exceptions.Exception_Information (E));
    end Send;
 

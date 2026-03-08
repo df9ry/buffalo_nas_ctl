@@ -10,7 +10,6 @@ with AWS.Config.Set;
 with AWS.Response;
 with AWS.Server;
 with AWS.Status;
-with AWS.Parameters;
 with AWS.MIME;
 with AWS.Config;
 with AWS.Messages;
@@ -18,8 +17,6 @@ with AWS.Client;
 with AWS.Dispatchers.Callback;
 
 with Log;
-with UUIDs;
-with UUID_Timestamp_Map;
 
 package body Web_Server is
    protected Shutdown_Control is
@@ -47,65 +44,68 @@ package body Web_Server is
    function Request_Handler
      (Request : AWS.Status.Data) return AWS.Response.Data
    is
-      use UUID_Timestamp_Map;
-
-      function Get_Param
-        (Params : AWS.Parameters.List; Param : String) return String is
-      begin
-         if AWS.Parameters.Exist (Params, Param) then
-            return Aws.Parameters.Get (Params, Param);
-         else
-            return "";
-         end if;
-      end Get_Param;
-
-      URI    : constant String := AWS.Status.URI (Request);
-      Method : constant String := AWS.Status.Method (Request);
-      Params : constant AWS.Parameters.List := AWS.Status.Parameters (Request);
-
-      function Text_Response
+      function Json_Response
         (Status_Code : AWS.Messages.Status_Code; The_Body : String)
          return AWS.Response.Data is
       begin
          return
            AWS.Response.Build
-             (Content_Type => AWS.MIME.Text_Plain,
+             (Content_Type => AWS.MIME.Application_JSON,
               Message_Body => The_Body,
               Status_Code  => Status_Code);
-      end Text_Response;
+      end Json_Response;
 
       function OK_Response return AWS.Response.Data is
       begin
-         return Text_Response (AWS.Messages.S200, "OK");
+         return Json_Response (AWS.Messages.S200, "{""status"":""ok""}");
       end OK_Response;
 
-   Last_Shutdown : Time := Long_Long_Ago;
-   Last_Touch    : Time := Long_Long_Ago;
-   Guid          : UUIDs.UUID;
+      function Retry_Seconds return Duration is
+      begin
+         return Duration (NAS_Shutdown) -
+           (Clock - Task_Monitor.Get_Last_Shutdown_Time);
+      end Retry_Seconds;
+
+      Method : constant String := AWS.Status.Method (Request);
+      URI    : constant String := AWS.Status.URI (Request);
+      --  Params : constant AWS.Parameters.List := AWS.Status.Parameters (Request);
 
    begin
       Log.Debug ("Received Method:" & Method & " with URI """ & URI & """");
       if Method = "OPTIONS" then
-         return Text_Response (AWS.Messages.S200, "");
+         return Json_Response (AWS.Messages.S200, "{}");
       elsif Method = "GET" then
-         if URI = "/health" then
+         if URI = "/api/health" then
             return OK_Response;
-         elsif URI = "/create" then
-            null;
-         elsif URI = "/update" then
-            null;
+         elsif URI = "/api/poll" then
+            Task_Monitor.Set_Last_Poll_Time (Clock);
+            if Task_Monitor.Is_NAS_Online then
+               return OK_Response;
+            end if;
+            if Task_Monitor.Get_Last_Shutdown_Time +
+              Duration (NAS_Shutdown) < Clock
+            then
+               WoL_Task.Start;
+               return OK_Response;
+            end if;
+            return Json_Response (AWS.Messages.S503,
+                                  "{""error"":""Server shutdown""," &
+                                    """retry_after_seconds"":" &
+                                    Retry_Seconds'Image & "}");
          else
-            return Text_Response (AWS.Messages.S404, "Not found: " & URI);
+            return Json_Response (AWS.Messages.S404,
+                                  "{""error"":""Not found: " &
+                                    URI & """}");
          end if;
-      elsif Method = "DELETE" then
-         return OK_Response;
+      else
+         return Json_Response (AWS.Messages.S404,
+                                 "{""error"":""Invalid method: " &
+                                 Method & """}");
       end if;
-
-      --  Other method:
-      return Text_Response (AWS.Messages.S404, "Invalid method: " & Method);
    exception
       when others =>
-         return Text_Response (AWS.Messages.S500, "Internal server error");
+         return Json_Response (AWS.Messages.S500,
+                                 "{""error"":""Internal server error""}");
    end Request_Handler;
 
    procedure Run is
@@ -126,7 +126,7 @@ package body Web_Server is
            & Host_Part
            & ":"
            & Trim (Integer'Image (Svc_Port), Left)
-           & "/health";
+           & "/api/health";
 
       begin
          Log.Info ("Performing self check to " & URL_Str);

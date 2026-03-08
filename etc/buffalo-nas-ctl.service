@@ -1,0 +1,27 @@
+[Unit]
+Description=Buffalo NAS WoL HTTP Microservice
+After=network.target
+
+[Service]
+Type=simple
+User=buffalo-nas
+Group=buffalo-nas
+ExecStart=/usr/local/bin/buffalo_nas_ctl -c /etc/Buffalo_NAS_Ctl.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# Capabilities für WoL (Port 9 Broadcast) und Port 8080
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW
+
+# Sicherheitsoptionen
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/etc/Buffalo_NAS_Ctl.conf
+ReadOnlyPaths=/usr/local/bin/buffalo_nas_ctl
+
+[Install]
+WantedBy=multi-user.target

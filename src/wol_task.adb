@@ -1,6 +1,7 @@
 with App_Global;
 with Wake_On_Lan;
 with Log;
+with ISO_Time; use ISO_Time;
 
 package body WoL_Task is
 
@@ -13,7 +14,7 @@ package body WoL_Task is
 
       procedure Set_Next_Execution_Time (New_Time : Time) is
       begin
-         Log.Debug ("Set Next_Execution_Time to " & New_Time'Image);
+         Log.Debug ("Set Next_Execution_Time to " & Image (New_Time));
          Next_Execution_Time := New_Time;
       end Set_Next_Execution_Time;
 
@@ -24,7 +25,7 @@ package body WoL_Task is
 
       procedure Set_Last_Shutdown_Time (New_Time : Time) is
       begin
-         Log.Debug ("Set Last_Shutdown_Time to " & New_Time'Image);
+         Log.Debug ("Set Last_Shutdown_Time to " & Image (New_Time));
          Last_Shutdown_Time := New_Time;
       end Set_Last_Shutdown_Time;
 
@@ -35,7 +36,7 @@ package body WoL_Task is
 
       procedure Set_Last_Poll_Time (New_Time : Time) is
       begin
-         Log.Debug ("Set Last_Poll_Time to " & New_Time'Image);
+         Log.Debug ("Set Last_Poll_Time to " & Image (New_Time));
          Last_Poll_Time := New_Time;
       end Set_Last_Poll_Time;
 
@@ -57,20 +58,25 @@ package body WoL_Task is
       Interval  : Duration;
       Grace     : Duration;
    begin
+      Log.Debug ("WoL_Task enter");
       select
          accept Start do
+            Log.Debug ("WoL_Task received initial Start");
             Interval := Duration (App_Global.WoL_Interval);
             Grace    := Duration (App_Global.Svc_Grace);
          end Start;
+      or
          accept Shutdown do
-            return;
+            Log.Debug ("WoL_Task received initial Shutdown");
+            Quit := True;
          end Shutdown;
       end select;
+      Log.Info ("WoL_Task start");
       while not Quit loop
          Log.Debug ("WoL_Task loop with NAS_Online " &
                       Task_Monitor.Is_NAS_Online'Image &
                       " and next WoL at " &
-                      Task_Monitor.Get_Next_Execution_Time'Image);
+                      Image (Task_Monitor.Get_Next_Execution_Time));
          select
             accept Shutdown do
                Log.Debug ("WoL_Task received Shutdown");
@@ -87,6 +93,7 @@ package body WoL_Task is
             end Start;
          or
             delay until Task_Monitor.Get_Next_Execution_Time;
+            Log.Debug ("WoL_Task timer event");
             if Task_Monitor.Get_Last_Poll_Time + Grace > Clock then
                Task_Monitor.Set_Next_Execution_Time (Clock + Interval);
                Wake_On_Lan.Send;

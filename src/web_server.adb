@@ -6,6 +6,7 @@ with Ada.Interrupts;
 with Ada.Interrupts.Names;
 with App_Global;            use App_Global;
 with WoL_Task;              use WoL_Task;
+with ISO_Time;              use ISO_Time;
 with AWS.Config.Set;
 with AWS.Response;
 with AWS.Server;
@@ -60,11 +61,10 @@ package body Web_Server is
          return Json_Response (AWS.Messages.S200, "{""status"":""ok""}");
       end OK_Response;
 
-      function Retry_Seconds return Duration is
+      function Retry_After return Time is
       begin
-         return Duration (NAS_Shutdown) -
-           (Clock - Task_Monitor.Get_Last_Shutdown_Time);
-      end Retry_Seconds;
+         return Task_Monitor.Get_Last_Shutdown_Time + Duration (NAS_Shutdown);
+      end Retry_After;
 
       Method : constant String := AWS.Status.Method (Request);
       URI    : constant String := AWS.Status.URI (Request);
@@ -90,8 +90,8 @@ package body Web_Server is
             end if;
             return Json_Response (AWS.Messages.S503,
                                   "{""error"":""Server shutdown""," &
-                                    """retry_after_seconds"":" &
-                                    Retry_Seconds'Image & "}");
+                                    """retry_after"":" &
+                                    Image (Retry_After) & "}");
          else
             return Json_Response (AWS.Messages.S404,
                                   "{""error"":""Not found: " &

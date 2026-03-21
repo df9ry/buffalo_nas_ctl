@@ -7,13 +7,15 @@ project Buffalo_Nas_Ctl is
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
    for Main use ("buffalo_nas_ctl.adb");
-   for Languages use ("Ada", "Shell", "Config", "Service");
+   for Languages use ("Ada", "Shell", "Config", "Service", "YAML", "Dockerfile");
 
    package Compiler is
       for Default_Switches ("ada") use ("-Og", "-ffunction-sections", "-fdata-sections", "-g", "-gnatW8", "-gnat2022", "-gnatVa", "-gnatwa.X", "-gnatyaABbc-defhiIklM79nOprStux");
-      for Driver ("shell") use "";
-      for Driver ("Config") use "";
-      for Driver ("Service") use "";
+      for Driver ("shell")      use "";
+      for Driver ("Config")     use "";
+      for Driver ("Service")    use "";
+      for Driver ("YAML")       use "";
+      for Driver ("Dockerfile") use "";
    end Compiler;
 
    package Binder is
@@ -25,12 +27,16 @@ project Buffalo_Nas_Ctl is
    end Install;
 
    package Naming is
-      for Spec_Suffix ("shell")   use ".sh";
-      for Body_Suffix ("shell")   use "._sh";
-      for Spec_Suffix ("Config")  use ".conf";
-      for Body_Suffix ("Config" ) use "._conf";
-      for Spec_Suffix ("Service") use ".service";
-      for Body_Suffix ("Service") use "._service";
+      for Spec_Suffix ("shell")      use ".sh";
+      for Body_Suffix ("shell")      use "._sh";
+      for Spec_Suffix ("Config")     use ".conf";
+      for Body_Suffix ("Config" )    use "._conf";
+      for Spec_Suffix ("Service")    use ".service";
+      for Body_Suffix ("Service")    use "._service";
+      for Spec_Suffix ("YAML")       use ".yml";
+      for Body_Suffix ("YAML")       use "._yml";
+      for Spec_Suffix ("Dockerfile") use ".dof";
+      for Body_Suffix ("Dockerfile") use "._dof";
    end Naming;
 
 end Buffalo_Nas_Ctl;

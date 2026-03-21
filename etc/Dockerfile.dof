@@ -1,0 +1,22 @@
+FROM alpine:latest
+
+# Tools installieren: für Healthcheck (curl) und Logs (journalctl)
+RUN apk add --no-cache curl systemd-tools
+
+# User anlegen mit den exakten Host-UID/GID
+RUN addgroup -g 984 buffalo-nas && \
+    adduser -D -u 999 -G buffalo-nas buffalo-nas
+
+# Dem User Zugriff aufs Journal geben
+RUN adduser buffalo-nas systemd-journal
+
+# Healthcheck-Skript erstellen
+RUN echo '#!/bin/sh\n\
+curl -f http://localhost:8000/api/health || exit 1\n\
+' > /healthcheck.sh && chmod +x /healthcheck.sh && chown buffalo-nas:buffalo-nas /healthcheck.sh
+
+# Arbeitsverzeichnis
+WORKDIR /home/buffalo-nas
+
+# Container startet mit Log-Follow, Healthcheck läuft separat
+CMD ["sh", "-c", "journalctl --follow --unit=buffalo-nas-ctl --output=short-full"]

@@ -11,6 +11,7 @@ with Ada.Directories;       use Ada.Directories;
 with Mac_Address_Parser;
 with Web_Server;
 with WoL_Task;
+with Script;
 with Log;
 
 procedure Buffalo_Nas_Ctl is
@@ -81,50 +82,48 @@ procedure Buffalo_Nas_Ctl is
    begin
       Log.Info ("Using config file " & To_String (Config_File_Name));
       Config_File.Load (Config, To_String (Config_File_Name));
+      --  LOG LEVEL  --
       if Length (App_Log_Level) = 0 then
          App_Log_Level :=
            To_Unbounded_String
              (Config_File.Get
                 (Config, "App", "Verbosity", App_Log_Level_Default));
       end if;
-      if Length (WoL_Target) = 0 then
-         WoL_Target :=
-           To_Unbounded_String
-             (Config_File.Get (Config, "WoL", "Target", WoL_Target_Default));
-      end if;
-      if WoL_Port = -1 then
-         WoL_Port :=
-           Config_File.Get_Int (Config, "WoL", "Port", WoL_Port_Default);
-      end if;
-      if Length (WoL_Mac) = 0 then
-         WoL_Mac :=
-           To_Unbounded_String
-             (Config_File.Get (Config, "WoL", "Mac", WoL_Mac_Default));
-      end if;
-      if WoL_Interval = -1 then
-         WoL_Interval :=
+      --  WOL  TARGET  --
+      WoL_Target :=
+        To_Unbounded_String
+          (Config_File.Get (Config, "WoL", "Target", WoL_Target_Default));
+      --  WOL PORT --
+      WoL_Port :=
+        Config_File.Get_Int (Config, "WoL", "Port", WoL_Port_Default);
+      --  WOL  MAC  --
+      WoL_Mac :=
+        To_Unbounded_String
+          (Config_File.Get (Config, "WoL", "Mac", WoL_Mac_Default));
+      --  WOL INTERVAL  --
+      WoL_Interval :=
            Config_File.Get_Int
              (Config, "WoL", "Interval", WoL_Interval_Default);
-      end if;
-      if NAS_Shutdown = -1 then
-         NAS_Shutdown :=
-           Config_File.Get_Int
-             (Config, "NAS", "Shutdown", NAS_Shutdown_Default);
-      end if;
-      if Length (Svc_Interface) = 0 then
-         App_Global.Svc_Interface :=
-           To_Unbounded_String
-             (Config_File.Get
-                (Config, "Service", "Interface", Svc_Interface_Default));
-      end if;
-      if Svc_Port = -1 then
-         Svc_Port :=
-           Config_File.Get_Int (Config, "Service", "Port", Svc_Port_Default);
-      end if;
-      if Svc_Grace = -1 then
-         Svc_Grace :=
-           Config_File.Get_Int (Config, "Service", "Grace", Svc_Grace_Default);
-      end if;
+      --  NAS SHUTDOWN  --
+      NAS_Shutdown :=
+        Config_File.Get_Int
+          (Config, "NAS", "Shutdown", NAS_Shutdown_Default);
+      --  NAS SCRIPT  --
+      NAS_Script :=
+        To_Unbounded_String
+          (Config_File.Get
+             (Config, "NAS", "Script", NAS_Script_Default));
+      --  SVC INTERFACE  --
+      Svc_Interface :=
+        To_Unbounded_String
+          (Config_File.Get
+             (Config, "Service", "Interface", Svc_Interface_Default));
+      --  SVC PORT  --
+      Svc_Port :=
+        Config_File.Get_Int (Config, "Service", "Port", Svc_Port_Default);
+      --  SVC GRACE  --
+      Svc_Grace :=
+        Config_File.Get_Int (Config, "Service", "Grace", Svc_Grace_Default);
    end When_Not_Set_Use_Default;
 
 begin
@@ -150,6 +149,7 @@ begin
    WoL_Task.Start;
    Web_Server.Run;
    WoL_Task.Shutdown;
+   Script.Shutdown;
 
    Set_Exit_Status (Success);
    Log.Info ("Clean program termination");

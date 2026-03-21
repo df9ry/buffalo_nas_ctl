@@ -18,6 +18,7 @@ with AWS.Client;
 with AWS.Dispatchers.Callback;
 
 with Log;
+with Script;
 
 package body Web_Server is
    protected Shutdown_Control is
@@ -80,32 +81,46 @@ package body Web_Server is
          elsif URI = "/api/poll" then
             Task_Monitor.Set_Last_Poll_Time (Clock);
             if Task_Monitor.Is_NAS_Online then
-               return OK_Response;
+               if Script.Script_Monitor.Is_Running then
+                 return Json_Response
+                    (AWS.Messages.S200, "{""state"":""script is starting""}");
+               else
+                 return Json_Response
+                    (AWS.Messages.S200, "{""state"":""script exit code " &
+                       Script.Script_Monitor.Get_Result'Image & "}");
+               end if;
             end if;
             if Task_Monitor.Get_Last_Shutdown_Time +
               Duration (NAS_Shutdown) < Clock
             then
                WoL_Task.Start;
-               return OK_Response;
+               Script.Start;
+               return Json_Response
+                 (AWS.Messages.S200, "{""state"":""script is starting""}");
             end if;
-            return Json_Response (AWS.Messages.S503,
-                                  "{""error"":""Server shutdown""," &
-                                    """retry_after"":""" &
-                                    Image (Retry_After) & """}");
+            return
+              Json_Response
+                (AWS.Messages.S503,
+                 "{""error"":""Server shutdown"","
+                 & """retry_after"":"""
+                 & Image (Retry_After)
+                 & """}");
          else
-            return Json_Response (AWS.Messages.S404,
-                                  "{""error"":""Not found: " &
-                                    URI & """}");
+            return
+              Json_Response
+                (AWS.Messages.S404, "{""error"":""Not found: " & URI & """}");
          end if;
       else
-         return Json_Response (AWS.Messages.S404,
-                                 "{""error"":""Invalid method: " &
-                                 Method & """}");
+         return
+           Json_Response
+             (AWS.Messages.S404,
+              "{""error"":""Invalid method: " & Method & """}");
       end if;
    exception
       when others =>
-         return Json_Response (AWS.Messages.S500,
-                                 "{""error"":""Internal server error""}");
+         return
+           Json_Response
+             (AWS.Messages.S500, "{""error"":""Internal server error""}");
    end Request_Handler;
 
    procedure Run is
@@ -174,6 +189,7 @@ package body Web_Server is
       if Self_Check then
          Shutdown_Control.Wait_Until_Shutdown;
       --  AWS.Server.Wait;
+
       end if;
 
       AWS.Server.Shutdown (Server);

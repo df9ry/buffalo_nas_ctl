@@ -17,3 +17,5 @@ utilada = "^2.8.2"
 [[depends-on]]
 aws = "^25.2.0"
 
+[[depends-on]]
+spawn = "^26.0.0"

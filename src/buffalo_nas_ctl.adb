@@ -148,8 +148,8 @@ begin
 
    WoL_Task.Start;
    Web_Server.Run;
-   WoL_Task.Shutdown;
    Script.Shutdown;
+   WoL_Task.Shutdown;
 
    Set_Exit_Status (Success);
    Log.Info ("Clean program termination");

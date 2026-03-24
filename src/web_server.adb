@@ -9,7 +9,6 @@ with WoL_Task;              use WoL_Task;
 with ISO_Time;              use ISO_Time;
 with AWS.Config.Set;
 with AWS.Response;
-with AWS.Server;
 with AWS.Status;
 with AWS.MIME;
 with AWS.Config;
@@ -34,14 +33,14 @@ package body Web_Server is
    protected body Shutdown_Control is
       entry Wait_Until_Shutdown when Done is
       begin
-         null;
+         Log.Info ("Interrupt signal received.");
       end Wait_Until_Shutdown;
 
       procedure On_Term_Signal is
       begin
          Done := True;
       end On_Term_Signal;
-   end Shutdown_Control;   --  Request Handler
+   end Shutdown_Control;
 
    function Request_Handler
      (Request : AWS.Status.Data) return AWS.Response.Data
@@ -76,46 +75,59 @@ package body Web_Server is
       if Method = "OPTIONS" then
          return Json_Response (AWS.Messages.S200, "{}");
       elsif Method = "GET" then
+         --  Check for health request
          if URI = "/api/health" then
             return OK_Response;
-         elsif URI = "/api/poll" then
+         end if;
+         --  Check for poll request
+         if URI = "/api/poll" then
             Task_Monitor.Set_Last_Poll_Time (Clock);
             if Task_Monitor.Is_NAS_Online then
+               --  NAS online, mount running
                if Script.Script_Monitor.Is_Running then
-                 return Json_Response
-                    (AWS.Messages.S200, "{""state"":""script is starting""}");
-               else
-                 return Json_Response
-                    (AWS.Messages.S200, "{""state"":""script exit code " &
-                       Script.Script_Monitor.Get_Result'Image & "}");
+                  return
+                    Json_Response
+                      (AWS.Messages.S201, "{""state"":""pending""}");
                end if;
+               if Script.Script_Monitor.Get_Result = 0 then
+                  --  NAS online, mount good
+                  return
+                    Json_Response (AWS.Messages.S200, "{""state"":""ok""}");
+               end if;
+               --  NAS online, script failed
+               return
+                 Json_Response (AWS.Messages.S401, "{""state"":""failed""}");
             end if;
-            if Task_Monitor.Get_Last_Shutdown_Time +
-              Duration (NAS_Shutdown) < Clock
+            --  NAS offline
+            if Task_Monitor.Get_Last_Shutdown_Time + Duration (NAS_Shutdown)
+              < Clock
             then
+               --  NAS can start
                WoL_Task.Start;
                Script.Start;
-               return Json_Response
-                 (AWS.Messages.S200, "{""state"":""script is starting""}");
+               return
+                 Json_Response (AWS.Messages.S201, "{""state"":""pending""}");
             end if;
+            --  NAS offline and in shutdown
             return
               Json_Response
                 (AWS.Messages.S503,
-                 "{""error"":""Server shutdown"","
+                 "{""state"":""shutdown"","
                  & """retry_after"":"""
                  & Image (Retry_After)
                  & """}");
          else
+            --  Undefined URI
             return
               Json_Response
                 (AWS.Messages.S404, "{""error"":""Not found: " & URI & """}");
          end if;
-      else
-         return
-           Json_Response
-             (AWS.Messages.S404,
-              "{""error"":""Invalid method: " & Method & """}");
       end if;
+      --  Invalid method
+      return
+        Json_Response
+          (AWS.Messages.S404,
+           "{""error"":""Invalid method: " & Method & """}");
    exception
       when others =>
          return
@@ -124,7 +136,6 @@ package body Web_Server is
    end Request_Handler;
 
    procedure Run is
-      Server        : AWS.Server.HTTP;
       My_Config     : AWS.Config.Object;
       My_Dispatcher : AWS.Dispatchers.Callback.Handler;
 
@@ -168,6 +179,7 @@ package body Web_Server is
       AWS.Config.Set.Server_Port (My_Config, Svc_Port);
       AWS.Config.Set.Server_Host (My_Config, To_String (Svc_Interface));
       AWS.Config.Set.Server_Name (My_Config, App_Name);
+      AWS.Config.Set.Reuse_Address (My_Config, True);
       AWS.Config.Set.Max_Connection (My_Config, 10);
       AWS.Config.Set.Accept_Queue_Size (My_Config, 5);
       My_Dispatcher :=
@@ -188,12 +200,11 @@ package body Web_Server is
 
       if Self_Check then
          Shutdown_Control.Wait_Until_Shutdown;
-      --  AWS.Server.Wait;
-
       end if;
 
       AWS.Server.Shutdown (Server);
-      WoL_Task.Shutdown;
-      Log.Info ("Server stopped.");
+      AWS.Server.Wait;
+
+      Log.Info ("Web server stopped.");
    end Run;
 end Web_Server;

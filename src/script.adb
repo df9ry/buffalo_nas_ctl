@@ -1,12 +1,12 @@
 with App_Global;
 with Log;
 
-with Ada.Strings.Unbounded;        use Ada.Strings.Unbounded;
-with Ada.Directories;              use Ada.Directories;
-with Ada.Exceptions;               use Ada.Exceptions;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Directories;       use Ada.Directories;
+with Ada.Exceptions;        use Ada.Exceptions;
 
-with Spawn;                        use Spawn;
-with Spawn.String_Vectors;         use Spawn.String_Vectors;
+with Spawn;                use Spawn;
+with Spawn.String_Vectors; use Spawn.String_Vectors;
 with Spawn.Processes.Monitor_Loop;
 with Spawn_Listeners;
 
@@ -14,8 +14,8 @@ package body Script is
 
    procedure Execute_Script (Command_Line : String; Result : out Integer) is
 
-      L      : aliased Spawn_Listeners.Listener;
-      Args   : UTF_8_String_Vector;
+      L    : aliased Spawn_Listeners.Listener;
+      Args : UTF_8_String_Vector;
 
    begin
       Log.Info ("Execute """ & Command_Line & """");
@@ -28,13 +28,22 @@ package body Script is
       L.Start;
       --  Warte auf Prozessende mit regelmäßigen Monitor‑Aufrufen
       while not L.Stopped loop
-          Spawn.Processes.Monitor_Loop (0.1);   -- 100 ms warten
+         if App_Global.Run_Guard.Is_Running then
+            Spawn.Processes.Monitor_Loop (0.1);
+         else
+            Log.Info ("Script interrupted");
+            L.Shutdown;
+            Result := -1;
+            return;
+         end if;
       end loop;
       Result := Integer (L.Result);
+      L.Shutdown;
       Log.Info ("Finished with exit code" & Result'Image);
    exception
       when E : others =>
          Log.Warning ("Spawn Exception:" & Exception_Message (E));
+         L.Shutdown;
          Result := -1;
    end Execute_Script;
 
@@ -67,7 +76,7 @@ package body Script is
       Result : Integer := -1;
    begin
       Log.Info ("Script_Task enter");
-      while not Quit loop
+      while App_Global.Run_Guard.Is_Running and then not Quit loop
          if Script_Monitor.Is_Running then
             Log.Debug ("Script_Task start execute");
             Execute_Script (To_String (App_Global.NAS_Script), Result);
@@ -90,7 +99,7 @@ package body Script is
             end select;
          end if;
       end loop;
-      Log.Info ("WoL_Task loop exited");
+      Log.Info ("Script_Task loop exited");
    end Worker;
 
    procedure Start is

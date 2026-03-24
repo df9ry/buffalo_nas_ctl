@@ -12,17 +12,12 @@ with Mac_Address_Parser;
 with Web_Server;
 with WoL_Task;
 with Script;
+with AWS.Server;
 with Log;
 
 procedure Buffalo_Nas_Ctl is
 
    Config_File_Name : Unbounded_String := To_Unbounded_String ("");
-
-   procedure Terminate_Program is
-      My_Exception : exception;
-   begin
-      Raise_Exception (My_Exception'Identity, "Termination");
-   end Terminate_Program;
 
    procedure Parse_Command_Line is
 
@@ -148,6 +143,7 @@ begin
 
    WoL_Task.Start;
    Web_Server.Run;
+   App_Global.Run_Guard.Stop;
    Script.Shutdown;
    WoL_Task.Shutdown;
 
@@ -166,6 +162,7 @@ exception
       Try_Help;
    when E : others =>
       Log.Error ("Error: " & Exception_Message (E));
-      Set_Exit_Status (Failure);
-      Terminate_Program;
+      AWS.Server.Shutdown (Web_Server.Server);
+      AWS.Server.Wait;
+      Run_Guard.Kill (Integer (Failure));
 end Buffalo_Nas_Ctl;

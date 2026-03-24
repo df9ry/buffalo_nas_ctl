@@ -35,4 +35,12 @@ package App_Global is
    type MAC_Address is array (1 .. 6) of MAC_Byte;
    NAS_Mac : Mac_Address := [others => 0];
 
+   protected Run_Guard is
+      procedure Stop;
+      function Is_Running return Boolean;
+      procedure Kill (Exit_Status : Integer);
+   private
+      Running : Boolean := True;
+   end Run_Guard;
+
 end App_Global;

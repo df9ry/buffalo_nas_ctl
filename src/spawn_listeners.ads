@@ -32,6 +32,9 @@ package Spawn_Listeners is
    procedure Start
      (Self : in out Listener);
 
+   procedure Shutdown
+     (Self : in out Listener);
+
    --  Hier kommen die Callbacks, die vom Monitor aufgerufen werden
    overriding
    procedure Standard_Output_Available (Self : in out Listener);

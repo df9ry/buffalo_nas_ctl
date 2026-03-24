@@ -1,10 +1,9 @@
 #!/bin/sh
 # stop_server.sh - Exakte Suche nach Prozessnamen
 
-PID=$(ps -eo pid,comm | awk '$2 == "buffalo_nas_ctl" {print $1}')
-
-if [ -n "$PID" ]; then
-    echo "Stopping buffalo_nas_ctl (PID: $PID)..."
+for PID in $(ps -eo pid,comm | awk '$2 == "buffalo_nas_ctl" {print $1}')
+do
+    echo "Stopping PID: $PID ..."
     echo "  Send HUP"
     kill -HUP $PID
     sleep 3
@@ -18,6 +17,4 @@ if [ -n "$PID" ]; then
         fi
     fi
     echo "  OK, process exited"
-else
-    echo "No process found"
-fi
+done

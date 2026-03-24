@@ -35,6 +35,15 @@ package body Spawn_Listeners is
       Self.P.Start;
    end Start;
 
+   procedure Shutdown
+     (Self : in out Listener) is
+   begin
+      Self.Stopped := True;
+      Self.P.Close_Standard_Input;
+      Self.P.Close_Standard_Output;
+      Self.P.Close_Standard_Error;
+   end Shutdown;
+
    overriding
    procedure Standard_Output_Available (Self : in out Listener) is
       use type Ada.Streams.Stream_Element_Count;

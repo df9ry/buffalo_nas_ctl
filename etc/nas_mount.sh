@@ -20,48 +20,48 @@ set -u
 attempt=0
 
 if [[ -f "$MARKER_FILE" ]]; then
-    echo "Marker-Datei $MARKER_FILE gefunden → NAS scheint bereits gemountet."
+    echo "Marker-File $MARKER_FILE found, already mounted."
     exit 0
 fi
 
-echo "Versuche NAS zu mounten (max. $MAX_ATTEMPTS Versuche, je $SLEEP_SECONDS s Pause)"
+echo "Attempt to mount NAS (max. $MAX_ATTEMPTS tries all $SLEEP_SECONDS sec.)"
 
 while (( attempt < MAX_ATTEMPTS )); do
     ((attempt++))
 
-    echo "Versuch $attempt/$MAX_ATTEMPTS ..."
+    echo "Attempt $attempt/$MAX_ATTEMPTS ..."
 
     # 1. Vorherigen (eventuell hängenden) Mount lösen
     if mountpoint -q "$MOUNT_POINT" 2>/dev/null; then
-        echo "  → löse vorherigen/hängenden Mount ..."
+        echo "  Clear up dangling mounts ..."
         umount -f -l "$MOUNT_POINT" 2>/dev/null || true
         sleep 1
     fi
 
     # 2. Mount ausführen (Parameter kommen aus /etc/fstab)
-    echo "  → führe mount $MOUNT_POINT aus ..."
+    echo "  Try to mount $MOUNT_POINT ..."
     if mount "$MOUNT_POINT" >/dev/null 2>&1; then
         # kurze Wartezeit → Dateisystem stabilisieren
         sleep 1.5
 
         if [[ -f "$MARKER_FILE" ]]; then
-            echo "Erfolg: Marker-Datei $MARKER_FILE gefunden."
-            echo "NAS erfolgreich gemountet nach $attempt Versuchen."
+            echo "Found $MARKER_FILE:"
+            echo "Mount NAS was successful after $attempt attempts."
             exit 0
         else
-            echo "  Warnung: mount meldet Erfolg, aber Marker $MARKER_FILE fehlt!"
+            echo "  Warnung: Good mount, but $MARKER_FILE is missing!"
         fi
     else
-        echo "  mount fehlgeschlagen (rc=$?)"
+        echo "  Mount failed with error code $?"
     fi
 
     # Nicht erfolgreich → nächste Runde
     if (( attempt < MAX_ATTEMPTS )); then
-        echo "  → warte $SLEEP_SECONDS Sekunden ..."
+        echo "  Pause for $SLEEP_SECONDS seconds ..."
         sleep "$SLEEP_SECONDS"
     fi
 done
 
-echo "FEHLER: NAS konnte nach $MAX_ATTEMPTS Versuchen nicht erfolgreich gemountet werden." >&2
-echo "Marker-Datei $MARKER_FILE wurde nicht gefunden." >&2
+echo "ERROR: Unable to mount NAS after $MAX_ATTEMPTS attempts." >&2
+echo "Marker-File $MARKER_FILE not found." >&2
 exit 1

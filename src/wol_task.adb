@@ -72,7 +72,7 @@ package body WoL_Task is
          end Shutdown;
       end select;
       Log.Info ("WoL_Task start");
-      while not Quit loop
+      while App_Global.Run_Guard.Is_Running and then not Quit loop
          Log.Debug ("WoL_Task loop with NAS_Online " &
                       Task_Monitor.Is_NAS_Online'Image &
                       " and next WoL at " &

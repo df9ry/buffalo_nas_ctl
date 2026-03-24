@@ -56,11 +56,6 @@ package body Web_Server is
               Status_Code  => Status_Code);
       end Json_Response;
 
-      function OK_Response return AWS.Response.Data is
-      begin
-         return Json_Response (AWS.Messages.S200, "{""status"":""ok""}");
-      end OK_Response;
-
       function Retry_After return Time is
       begin
          return Task_Monitor.Get_Last_Shutdown_Time + Duration (NAS_Shutdown);
@@ -77,7 +72,7 @@ package body Web_Server is
       elsif Method = "GET" then
          --  Check for health request
          if URI = "/api/health" then
-            return OK_Response;
+            return Json_Response (AWS.Messages.S200, "{""state"":""ok""}");
          end if;
          --  Check for poll request
          if URI = "/api/poll" then

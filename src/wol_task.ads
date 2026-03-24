@@ -19,6 +19,7 @@ package WoL_Task is
       Next_Execution_Time : Time := Eternal;
       Last_Shutdown_Time  : Time := Long_Long_Ago;
       Last_Poll_Time      : Time := Long_Long_Ago;
+      Last_Error_Time     : Time := Long_Long_Ago;
       NAS_Online          : Boolean := False;
    end Task_Monitor;
 

@@ -78,8 +78,8 @@ package body Web_Server is
          if URI = "/api/poll" then
             Task_Monitor.Set_Last_Poll_Time (Clock);
             if Task_Monitor.Is_NAS_Online then
-               --  NAS online, mount running
                if Script.Script_Monitor.Is_Running then
+                  --  NAS online, mount running
                   return
                     Json_Response
                       (AWS.Messages.S201, "{""state"":""pending""}");
@@ -90,8 +90,18 @@ package body Web_Server is
                     Json_Response (AWS.Messages.S200, "{""state"":""ok""}");
                end if;
                --  NAS online, script failed
+               if Task_Monitor.Get_Last_Error_Time + Duration (NAS_Shutdown)
+                 < Clock
+               then
+                  --  Healing time is not over. Continue sending error state.
+                  return
+                    Json_Response
+                      (AWS.Messages.S401, "{""state"":""failed""}");
+               end if;
+               --  Healing time is over - Script can start for next try
+               Script.Start;
                return
-                 Json_Response (AWS.Messages.S401, "{""state"":""failed""}");
+                 Json_Response (AWS.Messages.S201, "{""state"":""pending""}");
             end if;
             --  NAS offline
             if Task_Monitor.Get_Last_Shutdown_Time + Duration (NAS_Shutdown)

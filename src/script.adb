@@ -1,9 +1,11 @@
 with App_Global;
+with WoL_Task;
 with Log;
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Directories;       use Ada.Directories;
 with Ada.Exceptions;        use Ada.Exceptions;
+with Ada.Calendar;          use Ada.Calendar;
 
 with Spawn;                use Spawn;
 with Spawn.String_Vectors; use Spawn.String_Vectors;
@@ -84,6 +86,7 @@ package body Script is
               ("Script_Task finished execute with result" & Result'Image);
             Script_Monitor.Set_Result (Result);
             Script_Monitor.Set_Running (False);
+            WoL_Task.Task_Monitor.Set_Last_Error_Time (Clock);
          else
             Log.Debug ("Script_Task enter select");
             select

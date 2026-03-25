@@ -13,6 +13,8 @@ package WoL_Task is
       procedure Set_Last_Shutdown_Time (New_Time : Time);
       function  Get_Last_Poll_Time return Time;
       procedure Set_Last_Poll_Time (New_Time : Time);
+      function  Get_Last_Error_Time return Time;
+      procedure Set_Last_Error_Time (New_Time : Time);
       function  Is_NAS_Online return Boolean;
       procedure Set_NAS_Online (Online : Boolean);
    private

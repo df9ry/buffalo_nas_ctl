@@ -1,67 +1,81 @@
 #!/usr/bin/env bash
 # nas_mount.sh
-# Mountet einen per /etc/fstab definierten NAS-Mountpunkt mit Retry-Logik
-# und prüft Erfolg über eine Marker-Datei
+# Prüft, ob die NAS-Webseite erreichbar ist, und mountet dann den Share.
+# Verlässt sich nur auf das Mount selbst (kein Marker-File mehr).
 
 # ────────────────────────────────────────────────
-# Konfiguration – nur diese Werte anpassen
+# Konfiguration
 # ────────────────────────────────────────────────
 
 MOUNT_POINT="/mnt/nas"
-MARKER_FILE="${MOUNT_POINT}/.mark"
+NAS_URL="http://192.168.178.153"
 
-MAX_ATTEMPTS=18
-SLEEP_SECONDS=10
+# Webseiten-Check
+WEB_MAX_ATTEMPTS=18
+WEB_SLEEP_SECONDS=20
+
+# Mount-Check
+MOUNT_MAX_ATTEMPTS=3
+MOUNT_SLEEP_SECONDS=10
 
 # ────────────────────────────────────────────────
 
 set -u
 
+# 2. Webseite der NAS prüfen
+echo "Checking NAS web interface (interval ${WEB_SLEEP_SECONDS}s)..."
 attempt=0
-
-if [[ -f "$MARKER_FILE" ]]; then
-    echo "Marker-File $MARKER_FILE found, already mounted."
-    exit 0
-fi
-
-echo "Attempt to mount NAS (max. $MAX_ATTEMPTS tries all $SLEEP_SECONDS sec.)"
-
-while (( attempt < MAX_ATTEMPTS )); do
+while (( attempt < WEB_MAX_ATTEMPTS )); do
     ((attempt++))
+    echo "Web check attempt $attempt/$WEB_MAX_ATTEMPTS ..."
 
-    echo "Attempt $attempt/$MAX_ATTEMPTS ..."
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 --location "$NAS_URL" 2>/dev/null)
 
-    # 1. Vorherigen (eventuell hängenden) Mount lösen
-    if mountpoint -q "$MOUNT_POINT" 2>/dev/null; then
-        echo "  Clear up dangling mounts ..."
-        umount -f -l "$MOUNT_POINT" 2>/dev/null || true
-        sleep 1
-    fi
-
-    # 2. Mount ausführen (Parameter kommen aus /etc/fstab)
-    echo "  Try to mount $MOUNT_POINT ..."
-    if mount "$MOUNT_POINT" >/dev/null 2>&1; then
-        # kurze Wartezeit → Dateisystem stabilisieren
-        sleep 1.5
-
-        if [[ -f "$MARKER_FILE" ]]; then
-            echo "Found $MARKER_FILE:"
-            echo "Mount NAS was successful after $attempt attempts."
-            exit 0
-        else
-            echo "  Warnung: Good mount, but $MARKER_FILE is missing!"
-        fi
+    if [[ "$http_code" == "200" ]]; then
+        echo "NAS web interface responded with HTTP 200."
+        break
     else
-        echo "  Mount failed with error code $?"
-    fi
-
-    # Nicht erfolgreich → nächste Runde
-    if (( attempt < MAX_ATTEMPTS )); then
-        echo "  Pause for $SLEEP_SECONDS seconds ..."
-        sleep "$SLEEP_SECONDS"
+        echo "  Got HTTP $http_code, not ready yet."
+        if (( attempt < WEB_MAX_ATTEMPTS )); then
+            echo "  Waiting ${WEB_SLEEP_SECONDS} seconds ..."
+            sleep "$WEB_SLEEP_SECONDS"
+        fi
     fi
 done
 
-echo "ERROR: Unable to mount NAS after $MAX_ATTEMPTS attempts." >&2
-echo "Marker-File $MARKER_FILE not found." >&2
+if [[ "$http_code" != "200" ]]; then
+    echo "ERROR: NAS web interface not reachable after $WEB_MAX_ATTEMPTS attempts." >&2
+    exit 1
+fi
+
+sleep 3
+
+# Prüfen, ob bereits korrekt gemountet
+if mountpoint -q "$MOUNT_POINT" && grep -q " //192.168.178.153/TEGA " /proc/mounts; then
+    echo "NAS share is already mounted and ready."
+    exit 0
+fi
+
+# 3. Mount-Versuche
+echo "Attempting to mount NAS share (max. $MOUNT_MAX_ATTEMPTS tries)..."
+for ((attempt=1; attempt<=MOUNT_MAX_ATTEMPTS; attempt++)); do
+    echo "Mount attempt $attempt/$MOUNT_MAX_ATTEMPTS ..."
+
+    umount -l $MOUNT_POINT 2>/dev/null
+    if mount "$MOUNT_POINT"
+    then
+
+        sleep 3
+        echo "Mount successful after $attempt attempt(s)."
+        exit 0
+    else
+        echo "  Mount failed with error code $?"
+        if (( attempt < MOUNT_MAX_ATTEMPTS )); then
+            echo "  Waiting ${MOUNT_SLEEP_SECONDS} seconds before next try..."
+            sleep "$MOUNT_SLEEP_SECONDS"
+        fi
+    fi
+done
+
+echo "ERROR: Mount failed after $MOUNT_MAX_ATTEMPTS attempts." >&2
 exit 1

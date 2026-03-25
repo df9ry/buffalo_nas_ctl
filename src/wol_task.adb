@@ -40,6 +40,17 @@ package body WoL_Task is
          Last_Poll_Time := New_Time;
       end Set_Last_Poll_Time;
 
+      function Get_Last_Error_Time return Time is
+      begin
+         return Last_Error_Time;
+      end Get_Last_Error_Time;
+
+      procedure Set_Last_Error_Time (New_Time : Time) is
+      begin
+         Log.Debug ("Set Last_Error_Time to " & Image (New_Time));
+         Last_Error_Time := New_Time;
+      end Set_Last_Error_Time;
+
       function Is_NAS_Online return Boolean is
       begin
          return NAS_Online;

@@ -15,6 +15,6 @@ package Buffalo_Nas_Ctl_Config is
    Alire_Host_Distro : constant String := "suse";
 
    type Build_Profile_Kind is (release, validation, development);
-   Build_Profile : constant Build_Profile_Kind := release;
+   Build_Profile : constant Build_Profile_Kind := development;
 
 end Buffalo_Nas_Ctl_Config;

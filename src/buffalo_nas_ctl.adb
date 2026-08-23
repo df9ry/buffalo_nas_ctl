@@ -17,7 +17,7 @@ with Log;
 
 procedure Buffalo_Nas_Ctl is
 
-   Config_File_Name : Unbounded_String := To_Unbounded_String ("");
+   Config_File_Name : Unbounded_String := Null_Unbounded_String;
 
    procedure Parse_Command_Line is
 
